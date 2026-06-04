@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",                          /* Versión de JavaScript moderna y eficiente */
+    "module": "commonjs",                        /* El estándar que usa Node.js */
+    "lib": ["ES2022"],                           /* Librerías nativas que tendrá disponibles */
+    "allowJs": true,                             /* Permite mezclar archivos JS si fuera necesario */
+    "outDir": "./dist",                          /* Dónde guardará el código compilado para Railway */
+    "rootDir": "./src",                          /* Dónde buscará tu código TypeScript */
+    "strict": true,                              /* Activa tipado estricto (ayuda a prevenir bugs) */
+    "noImplicitAny": true,                       /* Te avisa si te olvidas de tipar alguna variable */
+    "esModuleInterop": true,                     /* Permite importar módulos de forma sencilla */
+    "skipLibCheck": true,                        /* Evita que revise tipos de librerías externas */
+    "forceConsistentCasingInFileNames": true     /* Evita problemas de mayúsculas/minúsculas en archivos */
+  },
+  "include": ["src/**/*"]                        /* Qué carpetas debe leer el compilador */
+}
+
+//hola
