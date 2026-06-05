@@ -5,25 +5,28 @@ API REST robusta para **LatamPay**, una plataforma de pagos y transferencias dis
 ## 🛠️ Tecnologías y Herramientas
 
 *   **Runtime:** Node.js (v18+)
-*   **Lenguaje:** TypeScript 5+
-*   **Framework:** Express 5 (Beta)
+*   **Lenguaje:** TypeScript 6+
+*   **Framework:** Express 5.2+
 *   **Base de Datos:** PostgreSQL
 *   **Autenticación:** JWT (JSON Web Tokens) & Bcrypt.js
 *   **Validación de Datos:** Zod
 *   **Documentación:** Swagger (OpenAPI 3.0)
-*   **Testing:** Vitest & Supertest
+*   **Testing:** Vitest 3+ & Supertest
 *   **Logs & Tooling:** ts-node-dev, dotenv, CORS
 
 ## 🏗️ Arquitectura del Proyecto
 
-El proyecto sigue una arquitectura de capas clara para separar responsabilidades:
+El proyecto sigue una arquitectura de capas (n-tier) para garantizar el desacoplamiento y la facilidad de testeo:
 
-*   **`src/routes`**: Definición de endpoints y mapeo a controladores.
-*   **`src/controllers`**: Orquestación de la petición, validación de entrada con Zod y envío de respuestas.
-*   **`src/services`**: Lógica de negocio pura y comunicación con la base de datos (incluye manejo de transacciones).
-*   **`src/middlewares`**: Protección de rutas, validación de roles y manejador global de errores.
-*   **`src/db`**: Configuración del pool de conexiones a PostgreSQL.
-*   **`src/utils`**: Clases de error personalizadas y generadores (CBU, Alias).
+*   **`src/routes`**: Define los puntos de entrada de la API y delega el control a los controladores.
+*   **`src/controllers`**: Valida los datos de entrada (Zod), maneja la lógica de orquestación de la petición y envía las respuestas formateadas.
+*   **`src/services`**: Contiene la lógica de negocio pura, interactúa con la base de datos mediante transacciones SQL y lanza errores operativos.
+*   **`src/middlewares`**: Componentes transversales para autenticación (JWT), control de acceso por roles y gestión global de errores.
+*   **`src/docs`**: Especificaciones OpenAPI para la generación automática de la documentación interactiva con Swagger.
+*   **`src/db`**: Capa de infraestructura para la gestión del pool de conexiones a PostgreSQL.
+*   **`src/schemas`**: Definición de esquemas de validación y tipos de datos derivados con Zod.
+*   **`src/tests`**: Pruebas automatizadas de integración y unidad para asegurar la estabilidad del sistema.
+*   **`src/utils`**: Clases de utilidad generales y generadores de datos simulados (CBU, Alias).
 
 ## 🗄️ Modelo de Datos (PostgreSQL)
 
@@ -117,44 +120,26 @@ erDiagram
 
 #### Descripción Detallada de Relaciones
 
-1.  **Usuarios y Billeteras (1:1)**:
-    *   **Relación**: Un Usuario tiene una única Billetera.
+1.  **`users` (Usuarios) y `wallets` (Billeteras) [1:1]**:
+    *   **Relación**: Un registro en `users` tiene una única correspondencia en `wallets`.
     *   **Implementación**: La tabla `wallets` tiene una clave foránea `user_id` con una restricción `UNIQUE`.
     *   **Regla de Negocio**: Al eliminar un usuario, su billetera se elimina automáticamente (`ON DELETE CASCADE`). No puede haber una billetera sin dueño ni un usuario con dos billeteras.
-2.  **Billeteras y Balances (1:N)**:
-    *   **Relación**: Una Billetera tiene múltiples Balances (uno por cada moneda).
+2.  **`wallets` (Billeteras) y `balances` (Saldos) [1:N]**:
+    *   **Relación**: Una `wallet` tiene múltiples registros en `balances` (uno por cada moneda).
     *   **Implementación**: La tabla `balances` referencia a `wallet_id`.
-    *   **Regla de Negocio**: Un usuario puede ver sus fondos en ARS, COP y VES por separado. La restricción `unique_wallet_currency` evita que una misma billetera tenga dos registros para la misma moneda (ej. no puede tener dos balances de ARS).
-3.  **Monedas y Balances (1:N)**:
-    *   **Relación**: Una Moneda (Currency) está presente en muchos Balances.
+    *   **Regla de Negocio**: Un usuario puede ver sus fondos en ARS, COP y VES por separado. La restricción `unique_wallet_currency` evita que una misma billetera tenga dos balances para la misma moneda.
+3.  **`currencies` (Monedas) y `balances` (Saldos) [1:N]**:
+    *   **Relación**: Una `currency` está presente en muchos registros de `balances`.
     *   **Implementación**: `balances.currency_code` referencia a `currencies.code`.
     *   **Regla de Negocio**: Solo se pueden crear balances para monedas que existan previamente en la tabla `currencies`.
-4.  **Billeteras y Transacciones (1:N)**:
-    *   **Relación**: Una Billetera puede ser el origen (`from_wallet_id`) o el destino (`to_wallet_id`) de muchas Transacciones.
+4.  **`wallets` (Billeteras) y `transactions` (Transacciones) [1:N]**:
+    *   **Relación**: Una `wallet` puede ser el origen (`from_wallet_id`) o el destino (`to_wallet_id`) de muchas `transactions`.
     *   **Implementación**: La tabla `transactions` tiene dos claves foráneas que apuntan a `wallets(id)`.
-    *   **Regla de Negocio**: Si una billetera se elimina, la transacción no se borra, pero el campo se vuelve nulo (`ON DELETE SET NULL`) para mantener el historial contable.
-### Descripción Detallada de Relaciones
-
-1.  **Usuarios y Billeteras (1:1)**:
-    *   **Relación**: Un Usuario tiene una única Billetera.
-    *   **Implementación**: La tabla `wallets` tiene una clave foránea `user_id` con una restricción `UNIQUE`.
-    *   **Regla de Negocio**: Al eliminar un usuario, su billetera se elimina automáticamente (`ON DELETE CASCADE`). No puede haber una billetera sin dueño ni un usuario con dos billeteras.
-2.  **Billeteras y Balances (1:N)**:
-    *   **Relación**: Una Billetera tiene múltiples Balances (uno por cada moneda).
-    *   **Implementación**: La tabla `balances` referencia a `wallet_id`.
-    *   **Regla de Negocio**: Un usuario puede ver sus fondos en ARS, COP y VES por separado. La restricción `unique_wallet_currency` evita que una misma billetera tenga dos registros para la misma moneda (ej. no puede tener dos balances de ARS).
-3.  **Monedas y Balances (1:N)**:
-    *   **Relación**: Una Moneda (Currency) está presente en muchos Balances.
-    *   **Implementación**: `balances.currency_code` referencia a `currencies.code`.
-    *   **Regla de Negocio**: Solo se pueden crear balances para monedas que existan previamente en la tabla `currencies`.
-4.  **Billeteras y Transacciones (1:N)**:
-    *   **Relación**: Una Billetera puede ser el origen (`from_wallet_id`) o el destino (`to_wallet_id`) de muchas Transacciones.
-    *   **Implementación**: La tabla `transactions` tiene dos claves foráneas que apuntan a `wallets(id)`.
-    *   **Regla de Negocio**: Si una billetera se elimina, la transacción no se borra, pero el campo se vuelve nulo (`ON DELETE SET NULL`) para mantener el historial contable.
-5.  **Monedas y Tasas de Cambio (1:N)**:
-    *   **Relación**: Una Moneda participa en múltiples pares de Tasas de Cambio (como origen o como destino).
+    *   **Regla de Negocio**: Si una billetera se elimina, la transacción se conserva con el campo en nulo (`ON DELETE SET NULL`) para auditoría histórica.
+5.  **`currencies` (Monedas) y `exchange_rates` (Tasas de Cambio) [1:N]**:
+    *   **Relación**: Una `currency` participa en múltiples pares de `exchange_rates` (como origen o destino).
     *   **Implementación**: `exchange_rates` usa `from_currency` y `to_currency` apuntando a `currencies.code`.
-    *   **Regla de Negocio**: Existe una restricción `unique_currency_pair` para asegurar que solo haya una tasa oficial para el par ARS -> COP, por ejemplo.
+    *   **Regla de Negocio**: Existe una restricción `unique_currency_pair` para asegurar una única tasa oficial por par de divisas.
 
 ### Lógica de Negocio Detallada
 
@@ -165,40 +150,40 @@ erDiagram
 
 ## 🚀 Instalación y Configuración
 
-1.  **Clonar el repositorio e instalar dependencias:**
+### Entorno Local (Desarrollo)
+
+1.  **Instalar dependencias:**
     ```bash
     npm install
     ```
 
-2.  **Variables de Entorno:**
-    Crea un archivo `.env` basado en `.env.example`:
+2.  **Configurar Variables de Entorno:**
+    Crea un archivo `.env` en la raíz del proyecto:
     ```env
     PORT=3000
-    DATABASE_URL=postgres://usuario:password@localhost:5432/latampay_db
-    JWT_SECRET=tu_secreto_super_seguro
+    DATABASE_URL=postgres://tu_usuario:tu_password@localhost:5432/latampay_db
+    JWT_SECRET=tu_secreto_super_seguro_de_al_menos_32_caracteres
     NODE_ENV=development
     ```
 
-3.  **Base de Datos:**
-    Ejecuta los scripts SQL en orden para crear el schema y los datos iniciales:
+3.  **Preparar Base de Datos:**
+    Asegúrate de tener PostgreSQL corriendo y ejecuta los scripts:
     ```bash
     psql -U postgres -d latampay_db -f sql/schema.sql
     psql -U postgres -d latampay_db -f sql/seed.sql
     ```
 
-4.  **Modo Desarrollo:**
+4.  **Iniciar Servidor:**
     ```bash
     npm run dev
     ```
 
-5.  **Build y Producción:**
-    ```bash
-    # Transpilar a JavaScript
-    npm run build
-    
-    # Iniciar en producción
-    npm start
-    ```
+### Despliegue (Producción - Railway)
+
+El backend está configurado para ejecutarse automáticamente en Railway mediante los comandos `build` y `start` definidos en `package.json`.
+
+1.  **Build**: `npm run build` (Transpila TypeScript a `dist/`).
+2.  **Start**: `npm start` (Ejecuta `node dist/server.js`).
 
 ## 🧪 Testing
 
@@ -221,6 +206,11 @@ npm test
 
 La documentación interactiva y detallada de la API (Swagger) está disponible en:
 👉 **`http://localhost:3000/api-docs`**
+
+### General
+| Método | Endpoint | Acceso | Descripción |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/` | Público | Verificación del estado del servidor. |
 
 ### Autenticación (`/api/auth`)
 
