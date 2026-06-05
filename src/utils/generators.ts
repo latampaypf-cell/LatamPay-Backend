@@ -13,7 +13,11 @@ export const generateCBU = (): string => {
  * Genera un alias simulado único (Ej: latampay.facundo.123).
  */
 export const generateAlias = (name: string): string => {
-  const cleanName = name.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const cleanName = name
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // Remueve acentos
+    .replace(/[^a-z0-9]/g, '');
   const randomSuffix = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
   
   return `latampay.${cleanName}.${randomSuffix}`;
