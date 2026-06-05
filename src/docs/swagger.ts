@@ -1,6 +1,10 @@
 import swaggerJsdoc from 'swagger-jsdoc';
 import { config } from '../config';
 
+const apiFiles = config.isProduction
+  ? ['./dist/routes/*.js', './dist/schemas/*.js']
+  : ['./src/routes/*.ts', './src/schemas/*.ts'];
+
 const options: swaggerJsdoc.Options = {
   definition: {
     openapi: '3.0.0',
@@ -28,7 +32,7 @@ const options: swaggerJsdoc.Options = {
       },
     },
   },
-  apis: ['./src/routes/*.ts', './src/schemas/*.ts'], // Archivos donde buscaremos las anotaciones
+  apis: apiFiles,
 };
 
 export const swaggerSpec = swaggerJsdoc(options);

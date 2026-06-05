@@ -12,12 +12,22 @@ const app: Application = express();
 // MIDDLEWARES GLOBALES
 // ====================================================================
 
-const allowedOrigins = config.frontendUrl ? config.frontendUrl.split(',') : '*';
+app.set('trust proxy', 1);
+
+const allowedOrigins = (config.frontendUrl ?? '')
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean);
+const vercelPreviewRegex = /^https:\/\/.*\.vercel\.app$/;
 
 app.use(cors({
-  origin: config.isProduction
-    ? allowedOrigins  // En producción acepta las URLs definidas (ej: localhost y Vercel)
-    : '*',            // En desarrollo acepta cualquier origen
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    if (!config.isProduction) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    if (vercelPreviewRegex.test(origin)) return callback(null, true);
+    return callback(new Error(`CORS bloqueado: ${origin}`));
+  },
   credentials: true,
 }));
 
@@ -33,6 +43,10 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 // ====================================================================
 
 app.use('/api/auth', authRoutes);
+
+app.get('/health', (_req: Request, res: Response) => {
+  res.status(200).json({ status: 'ok' });
+});
 
 app.get('/', (req: Request, res: Response) => {
   res.json({
