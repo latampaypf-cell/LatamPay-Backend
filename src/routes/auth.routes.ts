@@ -5,13 +5,84 @@ import { requireAuth } from '../middlewares/auth.middleware';   // Middleware pr
 
 const router = Router();
 
-// Endpoint público para iniciar sesión: POST /api/auth/login
+/**
+ * @swagger
+ * /api/auth/login:
+ *   post:
+ *     summary: Iniciar sesión
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 example: facundo@latampay.com
+ *               password:
+ *                 type: string
+ *                 example: Password123
+ *     responses:
+ *       200:
+ *         description: Login exitoso
+ *       401:
+ *         description: Credenciales inválidas
+ */
 router.post('/login', login);
 
-// Endpoint público para registrarse: POST /api/auth/register
+/**
+ * @swagger
+ * /api/auth/register:
+ *   post:
+ *     summary: Registrar un nuevo usuario
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *               - email
+ *               - password
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: Juan Perez
+ *               email:
+ *                 type: string
+ *                 example: juan@example.com
+ *               password:
+ *                 type: string
+ *                 example: Password123
+ *     responses:
+ *       201:
+ *         description: Usuario registrado exitosamente
+ *       409:
+ *         description: El email ya está registrado
+ */
 router.post('/register', register);
 
-// Endpoint protegido de prueba requerido por la rúbrica de Henry: GET /api/auth/me
+/**
+ * @swagger
+ * /api/auth/me:
+ *   get:
+ *     summary: Obtener perfil del usuario autenticado
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Datos del usuario
+ *       401:
+ *         description: No autorizado
+ */
 router.get('/me', requireAuth, (req: any, res) => {
   res.json({
     status: 'success',

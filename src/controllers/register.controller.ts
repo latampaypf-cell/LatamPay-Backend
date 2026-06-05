@@ -1,41 +1,28 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { registerUser } from '../services/register.service';
+import { registerSchema } from '../schemas/auth.schema';
+import { AppError } from '../utils/AppError';
 
-export const register = async (req: Request, res: Response): Promise<void> => {
+export const register = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { name, email, password } = req.body;
-
-    // Control de seguridad básico: Validar que no falte ningún dato de entrada
-    if (!name || !email || !password) {
-      res.status(400).json({
-        status: 'fail',
-        message: 'Por favor, proporciona nombre, correo electrónico y contraseña.'
-      });
-      return;
+    // 1. Validar input con Zod
+    const parsed = registerSchema.safeParse(req.body);
+    if (!parsed.success) {
+      throw new AppError(parsed.error.issues[0].message, 400);
     }
 
-    // Llamamos a la transacción del servicio exclusivo de registro
+    const { name, email, password } = parsed.data;
+
+    // 2. Llamar al servicio
     const result = await registerUser(name, email, password);
 
     res.status(201).json({
       status: 'success',
       message: 'Usuario registrado exitosamente junto a su billetera y balances 🚀',
-      data: result
+      data: result,
     });
 
-  } catch (error: any) {
-    if (error.message === 'El correo electrónico ya está registrado.') {
-      res.status(400).json({
-        status: 'fail',
-        message: error.message
-      });
-      return;
-    }
-
-    console.error('Error en register controller:', error);
-    res.status(500).json({
-      status: 'error',
-      message: 'Ocurrió un error al procesar el registro.'
-    });
+  } catch (error) {
+    next(error);
   }
 };

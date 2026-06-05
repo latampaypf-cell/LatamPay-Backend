@@ -1,40 +1,28 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { loginUser } from '../services/login.service';
+import { loginSchema } from '../schemas/auth.schema';
+import { AppError } from '../utils/AppError';
 
-export const login = async (req: Request, res: Response): Promise<void> => {
+export const login = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { email, password } = req.body;
-
-    // Control de seguridad básico
-    if (!email || !password) {
-      res.status(400).json({
-        status: 'fail',
-        message: 'Por favor, proporciona un correo electrónico y una contraseña.'
-      });
-      return;
+    // 1. Validar input con Zod
+    const parsed = loginSchema.safeParse(req.body);
+    if (!parsed.success) {
+      throw new AppError(parsed.error.issues[0].message, 400);
     }
 
-    // Llamamos al servicio exclusivo de login
+    const { email, password } = parsed.data;
+
+    // 2. Llamar al servicio exclusivo de login
     const result = await loginUser(email, password);
 
+    // 3. Responder exitosamente
     res.status(200).json({
       status: 'success',
       data: result
     });
 
-  } catch (error: any) {
-    if (error.message === 'Credenciales inválidas') {
-      res.status(401).json({
-        status: 'fail',
-        message: 'El correo o la contraseña son incorrectos.'
-      });
-      return;
-    }
-
-    console.error('Error en login controller:', error);
-    res.status(500).json({
-      status: 'error',
-      message: 'Ocurrió un error interno en el servidor.'
-    });
+  } catch (error) {
+    next(error);
   }
 };

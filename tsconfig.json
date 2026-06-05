@@ -12,7 +12,8 @@
     "skipLibCheck": true,                        /* Evita que revise tipos de librerías externas */
     "forceConsistentCasingInFileNames": true     /* Evita problemas de mayúsculas/minúsculas en archivos */
   },
-  "include": ["src/**/*"]                        /* Qué carpetas debe leer el compilador */
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "src/tests/**/*", "**/*.test.ts"]                        /* Qué carpetas debe leer el compilador */
 }
 
 //hola
