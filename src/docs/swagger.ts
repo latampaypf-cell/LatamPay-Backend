@@ -1,10 +1,17 @@
+import path from 'path';
 import swaggerJsdoc from 'swagger-jsdoc';
 import { config } from '../config';
 import { swaggerComponents } from './components';
 
 const apiFiles = config.isProduction
-  ? ['./dist/routes/*.js', './dist/schemas/*.js']
-  : ['./src/routes/*.ts', './src/schemas/*.ts'];
+  ? [
+      path.join(__dirname, '../routes/*.js'),
+      path.join(__dirname, '../schemas/*.js'),
+    ]
+  : [
+      path.join(__dirname, '../routes/*.ts'),
+      path.join(__dirname, '../schemas/*.ts'),
+    ];
 
 const options: swaggerJsdoc.Options = {
   definition: {
