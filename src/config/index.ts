@@ -11,6 +11,9 @@ const envSchema = z.object({
   PORT:         z.coerce.number().default(3000),
   NODE_ENV:     z.enum(['development', 'production', 'test']).default('development'),
   FRONTEND_URL: z.string().optional(),
+  BACKEND_URL:  z.string().optional(),
+  DOCS_USER:    z.string().optional(),
+  DOCS_PASS:    z.string().optional(),
   EXCHANGE_RATE_API_KEY: z.string().min(1, 'Falta la API Key de ExchangeRate-API.'),
 });
 
@@ -31,6 +34,9 @@ export const config = {
   nodeEnv:      parsed.data?.NODE_ENV ?? 'development',
   isProduction: parsed.data?.NODE_ENV === 'production',
   frontendUrl:  parsed.data?.FRONTEND_URL,
+  backendUrl:   parsed.data?.BACKEND_URL,
+  docsUser:     parsed.data?.DOCS_USER,
+  docsPass:     parsed.data?.DOCS_PASS,
   exchangeRateApiKey: parsed.data?.EXCHANGE_RATE_API_KEY ?? 'mock_key',
 } as const;
 
