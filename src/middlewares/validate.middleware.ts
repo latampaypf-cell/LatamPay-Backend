@@ -1,11 +1,12 @@
 import { Request, Response, NextFunction } from 'express';
-import { AnyZodObject, ZodError } from 'zod';
+import {  ZodError } from 'zod';
 import { AppError } from '../utils/AppError';
+
 
 /**
  * Middleware genérico para validar el body, query o params de una petición usando Zod.
  */
-export const validate = (schema: AnyZodObject, source: 'body' | 'query' | 'params' = 'body') => {
+export const validate = (schema: any, source: 'body' | 'query' | 'params' = 'body') => {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
       const result = await schema.parseAsync(req[source]);
