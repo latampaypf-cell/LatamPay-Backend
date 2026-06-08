@@ -1,5 +1,6 @@
 import swaggerJsdoc from 'swagger-jsdoc';
 import { config } from '../config';
+import { swaggerComponents } from './components';
 
 const apiFiles = config.isProduction
   ? ['./dist/routes/*.js', './dist/schemas/*.js']
@@ -22,15 +23,7 @@ const options: swaggerJsdoc.Options = {
         description: config.isProduction ? 'Servidor de Producción' : 'Servidor de desarrollo',
       },
     ],
-    components: {
-      securitySchemes: {
-        bearerAuth: {
-          type: 'http',
-          scheme: 'bearer',
-          bearerFormat: 'JWT',
-        },
-      },
-    },
+    components: swaggerComponents,
   },
   apis: apiFiles,
 };
