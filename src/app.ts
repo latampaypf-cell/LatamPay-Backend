@@ -5,7 +5,6 @@ import { swaggerSpec } from './docs/swagger';
 import apiRouter from './routes';
 import { errorHandler } from './middlewares/error.middleware';
 import { corsOptions } from './config/cors';
-import { docsAuth } from './middlewares/docs.middleware';
 
 const app: Application = express();
 
@@ -20,7 +19,7 @@ app.use(express.json());
 // ====================================================================
 // DOCUMENTACIÓN SWAGGER
 // ====================================================================
-app.use('/api-docs', docsAuth, swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // ====================================================================
 // RUTAS
