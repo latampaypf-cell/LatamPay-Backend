@@ -14,7 +14,7 @@ export const getWallet = async (req: any, res: Response, next: NextFunction) => 
   }
 };
 
-export const lookupRecipient = async (req: Request, res: Response, next: NextFunction) => {
+export const lookupRecipient = async (req: Request<{ identifier: string }> , res: Response, next: NextFunction) => {
   try {
     const { identifier } = req.params;
     const recipient = await walletService.findRecipient(identifier);
