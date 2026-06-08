@@ -2,8 +2,8 @@ import { describe, it, expect } from 'vitest';
 import request from 'supertest';
 import app from '../app';
 
-describe('App Root', () => {
-  it('should return 200 and welcome message at /', async () => {
+describe('Ruta Raíz de la App', () => {
+  it('debería retornar 200 y el mensaje de bienvenida en /', async () => {
     const response = await request(app).get('/');
 
     expect(response.status).toBe(200);
@@ -11,7 +11,7 @@ describe('App Root', () => {
     expect(response.body.message).toContain('¡Hola Facu!');
   });
 
-  it('should return 404 for unknown routes', async () => {
+  it('debería retornar 404 para rutas desconocidas', async () => {
     const response = await request(app).get('/api/unknown');
     expect(response.status).toBe(404);
   });

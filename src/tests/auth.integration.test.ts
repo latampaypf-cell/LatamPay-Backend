@@ -36,13 +36,13 @@ vi.mock('jsonwebtoken', () => ({
   },
 }));
 
-describe('Auth Integration Tests', () => {
+describe('Pruebas de Integración de Autenticación', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   describe('POST /api/auth/register', () => {
-    it('should register a new user successfully', async () => {
+    it('debería registrar un nuevo usuario exitosamente', async () => {
       // 1. Mock de la verificación de email duplicado (no existe)
       (db.query as any).mockResolvedValueOnce({ rows: [] });
 
@@ -72,7 +72,7 @@ describe('Auth Integration Tests', () => {
       expect(mClient.query).toHaveBeenCalledWith('COMMIT');
     });
 
-    it('should return 400 if validation fails', async () => {
+    it('debería retornar 400 si la validación falla', async () => {
       const response = await request(app)
         .post('/api/auth/register')
         .send({
@@ -85,7 +85,7 @@ describe('Auth Integration Tests', () => {
       expect(response.body.status).toBe('fail');
     });
 
-    it('should return 409 if email already exists', async () => {
+    it('debería retornar 409 si el email ya existe', async () => {
       // Mock de que el email ya existe
       (db.query as any).mockResolvedValueOnce({ rows: [{ id: 'existing' }] });
 

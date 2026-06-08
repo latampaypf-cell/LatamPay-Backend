@@ -2,9 +2,9 @@ import express, { Application, Request, Response } from 'express';
 import cors from 'cors';
 import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from './docs/swagger';
-import authRoutes from './routes/auth.routes';
+import apiRouter from './routes';
 import { errorHandler } from './middlewares/error.middleware';
-import { config } from './config';
+import { corsOptions } from './config/cors';
 
 const app: Application = express();
 
@@ -13,24 +13,7 @@ const app: Application = express();
 // ====================================================================
 
 app.set('trust proxy', 1);
-
-const allowedOrigins = (config.frontendUrl ?? '')
-  .split(',')
-  .map((s) => s.trim())
-  .filter(Boolean);
-const vercelPreviewRegex = /^https:\/\/.*\.vercel\.app$/;
-
-app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin) return callback(null, true);
-    if (!config.isProduction) return callback(null, true);
-    if (allowedOrigins.includes(origin)) return callback(null, true);
-    if (vercelPreviewRegex.test(origin)) return callback(null, true);
-    return callback(new Error(`CORS bloqueado: ${origin}`));
-  },
-  credentials: true,
-}));
-
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // ====================================================================
@@ -42,7 +25,7 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 // RUTAS
 // ====================================================================
 
-app.use('/api/auth', authRoutes);
+app.use('/api', apiRouter);
 
 app.get('/health', (_req: Request, res: Response) => {
   res.status(200).json({ status: 'ok' });

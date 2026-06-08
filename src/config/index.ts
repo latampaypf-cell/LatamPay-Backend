@@ -11,25 +11,27 @@ const envSchema = z.object({
   PORT:         z.coerce.number().default(3000),
   NODE_ENV:     z.enum(['development', 'production', 'test']).default('development'),
   FRONTEND_URL: z.string().optional(),
+  EXCHANGE_RATE_API_KEY: z.string().min(1, 'Falta la API Key de ExchangeRate-API.'),
 });
 
 const parsed = envSchema.safeParse(process.env);
 
-if (!parsed.success) {
+if (!parsed.success && process.env.NODE_ENV !== 'test') {
   parsed.error.issues.forEach((issue) => {
     console.error(`❌ [config-error]: en el campo ${issue.path.join('.')}: ${issue.message}`);
   });
   process.exit(1);
 }
 
-// 3. Exportamos las configuraciones limpias y tipadas
+// 3. Exportamos las configuraciones limpias y tipadas (con fallback para tests)
 export const config = {
-  port:         parsed.data.PORT,
-  databaseUrl:  parsed.data.DATABASE_URL,
-  jwtSecret:    parsed.data.JWT_SECRET,
-  nodeEnv:      parsed.data.NODE_ENV,
-  isProduction: parsed.data.NODE_ENV === 'production',
-  frontendUrl:  parsed.data.FRONTEND_URL,
+  port:         parsed.data?.PORT ?? 3000,
+  databaseUrl:  parsed.data?.DATABASE_URL ?? '',
+  jwtSecret:    parsed.data?.JWT_SECRET ?? 'secret_for_testing_purposes_only_32_chars',
+  nodeEnv:      parsed.data?.NODE_ENV ?? 'development',
+  isProduction: parsed.data?.NODE_ENV === 'production',
+  frontendUrl:  parsed.data?.FRONTEND_URL,
+  exchangeRateApiKey: parsed.data?.EXCHANGE_RATE_API_KEY ?? 'mock_key',
 } as const;
 
 export default config;

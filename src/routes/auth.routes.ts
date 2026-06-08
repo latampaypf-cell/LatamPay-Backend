@@ -1,7 +1,9 @@
 import { Router } from 'express';
-import { login } from '../controllers/login.controller';      // Importamos el controlador de login
-import { register } from '../controllers/register.controller';  // Importamos el de registro
-import { requireAuth } from '../middlewares/auth.middleware';   // Middleware protector
+import { login } from '../controllers/login.controller';
+import { register } from '../controllers/register.controller';
+import { requireAuth } from '../middlewares/auth.middleware';
+import { validate } from '../middlewares/validate.middleware';
+import { loginSchema, registerSchema } from '../schemas/auth.schema';
 
 const router = Router();
 
@@ -30,10 +32,21 @@ const router = Router();
  *     responses:
  *       200:
  *         description: Login exitoso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status: { type: string, example: success }
+ *                 token: { type: string }
+ *                 user: { $ref: '#/components/schemas/User' }
  *       401:
  *         description: Credenciales inválidas
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/Error' }
  */
-router.post('/login', login);
+router.post('/login', validate(loginSchema), login);
 
 /**
  * @swagger
@@ -64,10 +77,24 @@ router.post('/login', login);
  *     responses:
  *       201:
  *         description: Usuario registrado exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status: { type: string, example: success }
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     user: { $ref: '#/components/schemas/User' }
+ *                     wallet: { $ref: '#/components/schemas/Wallet' }
  *       409:
  *         description: El email ya está registrado
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/Error' }
  */
-router.post('/register', register);
+router.post('/register', validate(registerSchema), register);
 
 /**
  * @swagger
@@ -80,8 +107,18 @@ router.post('/register', register);
  *     responses:
  *       200:
  *         description: Datos del usuario
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status: { type: string, example: success }
+ *                 user: { $ref: '#/components/schemas/User' }
  *       401:
  *         description: No autorizado
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/Error' }
  */
 router.get('/me', requireAuth, (req: any, res) => {
   res.json({
