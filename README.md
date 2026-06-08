@@ -1,32 +1,42 @@
 # LatamPay Backend API 🚀
 
-API REST robusta para **LatamPay**, una plataforma de pagos y transferencias diseñada para el mercado latinoamericano. Construida con un enfoque en escalabilidad, seguridad y tipos estrictos.
+[![Node.js](https://img.shields.io/badge/Node.js-18+-68a063?style=flat-square&logo=node.js)](https://nodejs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-6+-3178c6?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15+-336791?style=flat-square&logo=postgresql)](https://www.postgresql.org/)
+[![Vitest](https://img.shields.io/badge/Testing-Vitest-ffbb00?style=flat-square&logo=vitest)](https://vitest.dev/)
+[![SOLID](https://img.shields.io/badge/Principles-SOLID-red?style=flat-square)](https://en.wikipedia.org/wiki/SOLID)
+
+API REST robusta para **LatamPay**, una plataforma de pagos y transferencias diseñada para el mercado latinoamericano. Construida con un enfoque en escalabilidad, seguridad, tipos estrictos y **principios SOLID**.
 
 ## 🛠️ Tecnologías y Herramientas
 
 *   **Runtime:** Node.js (v18+)
 *   **Lenguaje:** TypeScript 6+
-*   **Framework:** Express 5.2+
-*   **Base de Datos:** PostgreSQL
+*   **Framework:** Express 5.2+ (Fast & Minimalist)
+*   **Base de Datos:** PostgreSQL (Pool de conexiones gestionado)
 *   **Autenticación:** JWT (JSON Web Tokens) & Bcrypt.js
-*   **Validación de Datos:** Zod
-*   **Documentación:** Swagger (OpenAPI 3.0)
-*   **Testing:** Vitest 3+ & Supertest
-*   **Logs & Tooling:** ts-node-dev, dotenv, CORS
+*   **Validación de Datos:** Zod (Middleware de validación centralizado)
+*   **Documentación:** Swagger (OpenAPI 3.0) con componentes reutilizables
+*   **Testing:** Vitest 3+ & Supertest (34 tests de integración pasando)
+*   **Tareas Programadas:** node-cron (Sincronización horaria de divisas)
+*   **Logs & Tooling:** ts-node-dev, dotenv, CORS modularizado
 
-## 🏗️ Arquitectura del Proyecto
+## 🏗️ Arquitectura del Proyecto (SOLID & Clean Architecture)
 
-El proyecto sigue una arquitectura de capas (n-tier) para garantizar el desacoplamiento y la facilidad de testeo:
+El proyecto sigue una arquitectura de capas modularizada para garantizar el desacoplamiento y la facilidad de mantenimiento:
 
-*   **`src/routes`**: Define los puntos de entrada de la API y delega el control a los controladores.
-*   **`src/controllers`**: Valida los datos de entrada (Zod), maneja la lógica de orquestación de la petición y envía las respuestas formateadas.
-*   **`src/services`**: Contiene la lógica de negocio pura, interactúa con la base de datos mediante transacciones SQL y lanza errores operativos.
-*   **`src/middlewares`**: Componentes transversales para autenticación (JWT), control de acceso por roles y gestión global de errores.
-*   **`src/docs`**: Especificaciones OpenAPI para la generación automática de la documentación interactiva con Swagger.
-*   **`src/db`**: Capa de infraestructura para la gestión del pool de conexiones a PostgreSQL.
-*   **`src/schemas`**: Definición de esquemas de validación y tipos de datos derivados con Zod.
-*   **`src/tests`**: Pruebas automatizadas de integración y unidad para asegurar la estabilidad del sistema.
-*   **`src/utils`**: Clases de utilidad generales y generadores de datos simulados (CBU, Alias).
+*   **`src/routes`**: Definición de endpoints con validación automática mediante middleware genérico.
+*   **`src/controllers`**: Orquestación de peticiones y respuestas (Thin Controllers).
+*   **`src/services`**: Lógica de negocio pura dividida por dominios (SRP):
+    *   `transaction.service.ts`: Depósitos, retiros, transferencias e historial.
+    *   `exchange.service.ts`: Sincronización de tasas y swaps de divisas.
+    *   `wallet.service.ts`: Gestión de cuentas, búsqueda y contactos.
+*   **`src/middlewares`**: Seguridad (Auth), validación (Zod) y gestión global de errores.
+*   **`src/docs`**: Documentación interactiva Swagger modularizada con esquemas compartidos.
+*   **`src/db`**: Capa de infraestructura para PostgreSQL con soporte para SSL en producción.
+*   **`src/schemas`**: Definición de contratos de validación con Zod.
+*   **`src/tests`**: Suite completa de pruebas de integración modularizada.
+*   **`src/utils`**: Generadores (CBU/Alias) y tareas programadas.
 
 ## 🗄️ Modelo de Datos (PostgreSQL)
 
@@ -158,12 +168,14 @@ erDiagram
     ```
 
 2.  **Configurar Variables de Entorno:**
-    Crea un archivo `.env` en la raíz del proyecto:
+    Crea un archivo `.env` en la raíz del proyecto basándote en `.env.example`.
     ```env
     PORT=3000
-    DATABASE_URL=postgres://tu_usuario:tu_password@localhost:5432/latampay_db
-    JWT_SECRET=tu_secreto_super_seguro_de_al_menos_32_caracteres
+    DATABASE_URL=postgres://usuario:password@localhost:5432/latampay_db
+    JWT_SECRET=tu_secreto_super_seguro
     NODE_ENV=development
+    FRONTEND_URL=http://localhost:5173
+    EXCHANGE_RATE_API_KEY=tu_api_key_aqui
     ```
 
 3.  **Preparar Base de Datos:**
@@ -178,137 +190,117 @@ erDiagram
     npm run dev
     ```
 
-### Despliegue (Producción - Railway)
+### 📜 Scripts Disponibles
 
-El backend está configurado para ejecutarse automáticamente en Railway mediante los comandos `build` y `start` definidos en `package.json`.
+*   `npm run dev`: Inicia el servidor en modo desarrollo con recarga automática (`ts-node-dev`).
+*   `npm run build`: Compila el código TypeScript a JavaScript plano en la carpeta `/dist`.
+*   `npm start`: Ejecuta la versión compilada del proyecto (usado en producción).
+*   `npm test`: Inicia la suite de tests en modo interactivo con Vitest.
+*   `npm run test:run`: Ejecuta todos los tests una sola vez y entrega el reporte final de éxito.
 
-1.  **Build**: `npm run build` (Transpila TypeScript a `dist/`).
-2.  **Start**: `npm start` (Ejecuta `node dist/server.js`).
+---
 
-## 🧪 Testing
+## 🌐 Guía de Despliegue
 
-El proyecto cuenta con una suite de pruebas automatizadas utilizando **Vitest** y **Supertest**, cubriendo integración y unidad.
+### Backend (Railway)
+*   **Repo:** Conecta tu repositorio de GitHub.
+*   **Variables:** Configura `DATABASE_URL`, `JWT_SECRET`, `EXCHANGE_RATE_API_KEY` y `FRONTEND_URL` en el dashboard.
+*   **PostgreSQL:** Puedes usar el plugin de Postgres de Railway.
+*   **Comando de Inicio:** El sistema usará `npm start` automáticamente.
 
-*   **Tests de Integración**: Flujos completos de registro, login y perfiles protegidos.
-*   **Tests de Middlewares**: Validación de tokens JWT, control de acceso de administradores y manejo global de errores.
-*   **Tests Unitarios**: Generadores de CBU/Alias y utilidades.
+### Frontend (Vercel)
+*   **Variables:** Define la URL de tu API de Railway en el frontend.
+*   **CORS:** Asegúrate de que el dominio de Vercel esté en la lista de `FRONTEND_URL` del backend.
 
-Para ejecutar los tests:
-```bash
-# Ejecución única (Modo CI)
-npm run test:run
+---
 
-# Modo observación (Desarrollo)
-npm test
-```
+## 🔐 API Endpoints
 
-## 🔐 API Endpoints (Principales)
+La documentación interactiva completa está disponible en: 👉 **`http://localhost:3000/api-docs`**
 
-La documentación interactiva y detallada de la API (Swagger) está disponible en:
-👉 **`http://localhost:3000/api-docs`**
-
-### General
+### Resumen de Rutas
 | Método | Endpoint | Acceso | Descripción |
 | :--- | :--- | :--- | :--- |
 | `GET` | `/` | Público | Verificación del estado del servidor. |
+| `POST` | `/api/auth/register` | Público | Registro de usuario y billetera. |
+| `POST` | `/api/auth/login` | Público | Login y obtención de JWT. |
+| `GET` | `/api/auth/me` | Privado | Datos del perfil del usuario. |
+| `GET` | `/api/exchange/rates` | Público | Ver tasas (ARS, COP, VES). |
+| `GET` | `/api/wallets/me` | Privado | Ver CBU, Alias y saldos. |
+| `GET` | `/api/wallets/lookup/:id` | Privado | Buscar destinatario por CBU o Alias. |
+| `GET` | `/api/wallets/contacts` | Privado | Ver contactos frecuentes (ya transferidos). |
+| `POST` | `/api/wallets/deposit` | Privado | Cargar fondos a la billetera (Simulado). |
+| `POST` | `/api/wallets/withdraw` | Privado | Retirar fondos de la billetera (Simulado). |
+| `POST` | `/api/wallets/swap` | Privado | Cambiar de moneda (ej: ARS a COP). |
+| `POST` | `/api/wallets/transfer` | Privado | Enviar dinero a otro usuario. |
+| `GET` | `/api/wallets/history` | Privado | Historial de transacciones paginado. |
 
-### Autenticación (`/api/auth`)
+### 💡 Tips para el Frontend
+1.  **Seguridad:** Todas las rutas marcadas como `Privado` requieren el header `Authorization: Bearer [TOKEN]`.
+2.  **Validación de Destinatario:** Antes de transferir, usa el endpoint de `lookup` para mostrar el nombre del dueño del CBU/Alias y dar seguridad al usuario.
+3.  **Historial Dinámico:** El historial devuelve la dirección `direction: 'sent' | 'received'`, lo que permite pintar fácilmente los montos en Rojo o Verde.
 
-| Método | Endpoint | Acceso | Descripción |
-| :--- | :--- | :--- | :--- |
-| `POST` | `/register` | Público | Crea usuario + billetera + balances iniciales. |
-| `POST` | `/login` | Público | Valida credenciales y retorna JWT. |
-| `GET` | `/me` | Privado | Retorna el perfil del usuario autenticado. |
+---
 
-#### Ejemplos de Uso
+## ✅ Funcionalidades Implementadas
+*   [x] Autenticación JWT y Registro con creación automática de billetera.
+*   [x] Billetera multidivisa (ARS, COP, VES).
+*   [x] Depósitos y **Retiros** de fondos con transacciones atómicas.
+*   [x] Cambio de divisas (Swap) con tasas reales sincronizadas.
+*   [x] Transferencias entre usuarios por CBU o Alias.
+*   [x] **Buscador de destinatarios** y Agenda de contactos frecuentes.
+*   [x] **Historial de transacciones** con paginación y dirección (sent/received).
+*   [x] Tarea programada (Cron Job) para actualización de divisas.
+*   [x] **Modularización basada en SOLID** y Clean Architecture.
+*   [x] Cobertura de tests modularizada (**34 tests exitosos**).
 
-**1. Registro de Usuario (`POST /register`)**
-*   **Body:**
-    ```json
-    {
-      "name": "Juan Pérez",
-      "email": "juan@example.com",
-      "password": "Password123"
-    }
-    ```
-*   **Respuesta (201):**
-    ```json
-    {
-      "status": "success",
-      "message": "Usuario registrado exitosamente junto a su billetera y balances 🚀",
-      "data": {
-        "user": { "id": "uuid", "name": "Juan Pérez", "email": "juan@example.com", "role": "user" },
-        "wallet": { "id": "uuid", "cbu": "22-dígitos", "alias": "latampay.juanperez.123" }
-      }
-    }
-    ```
+---
 
-**2. Inicio de Sesión (`POST /login`)**
-*   **Body:**
-    ```json
-    {
-      "email": "juan@example.com",
-      "password": "Password123"
-    }
-    ```
-*   **Respuesta (200):**
-    ```json
-    {
-      "status": "success",
-      "data": {
-        "user": { "id": "uuid", "name": "Juan Pérez", "email": "juan@example.com", "role": "user" },
-        "token": "eyJhbGciOiJIUzI1NiI..."
-      }
-    }
-    ```
+## 🔒 Seguridad e Integridad
+*   **Aislamiento de Transacciones:** Todas las operaciones que involucran dinero usan el motor de transacciones de PostgreSQL (`BEGIN/COMMIT/ROLLBACK`), garantizando que no se pierdan fondos ante fallos.
+*   **Validación de Contratos:** Uso de **Zod** para asegurar que toda información entrante cumpla con los tipos y formatos requeridos antes de tocar la DB.
+*   **Protección de Identidad:** Hasheo de passwords con **Bcrypt** y gestión de sesiones mediante **JWT** con tiempos de expiración configurables.
+*   **CORS:** Configuración granular para permitir solo dominios autorizados y entornos de preview (Vercel).
 
-**3. Perfil de Usuario (`GET /me`)**
-*   **Headers:** `Authorization: Bearer <token>`
-*   **Respuesta (200):**
-    ```json
-    {
-      "status": "success",
-      "message": "¡Acceso concedido! Tu sesión es válida 🔐",
-      "user": { "id": "uuid", "email": "juan@example.com", "role": "user" }
-    }
-    ```
+---
+
+## 🧪 Testing
+```bash
+# Ejecutar suite completa modularizada (Vitest + Supertest)
+npm run test:run
+```
 
 ---
 
 ## 📂 Estructura del Proyecto
-
 ```
 LatamPay-Backend/
-├── sql/               # Scripts de Base de Datos
-│   ├── schema.sql     # Definición de tablas e índices
-│   └── seed.sql       # Datos iniciales (Monedas, Tasas, Admin)
+├── sql/               # Scripts SQL (Schema & Seed)
 ├── src/
-│   ├── config/        # Variables de entorno y constantes
-│   ├── controllers/   # Manejo de peticiones y respuestas
-│   ├── db/            # Pool de conexiones a Postgres
-│   ├── docs/          # Configuración de Swagger/OpenAPI
-│   ├── middlewares/   # Auth, Admin y Error Handler
-│   ├── routes/        # Definición de rutas Express
-│   ├── schemas/       # Validaciones con Zod
-│   ├── services/      # Lógica de negocio y queries SQL
-│   ├── tests/         # Suite de pruebas (Vitest + Supertest)
-│   ├── types/         # Definiciones de TypeScript
-│   ├── utils/         # Helpers (AppError, Generators)
-│   ├── app.ts         # Configuración del servidor
-│   └── server.ts      # Punto de entrada (Listen)
-├── tsconfig.json      # Configuración de TypeScript
-└── package.json       # Scripts y dependencias
+│   ├── config/        # Configuración (Zod Validation)
+│   ├── controllers/   # Controladores de la API
+│   ├── db/            # Pool de conexiones
+│   ├── docs/          # Configuración Swagger
+│   ├── middlewares/   # Seguridad y Errores
+│   ├── routes/        # Definición de Endpoints
+│   ├── schemas/       # Validaciones de Entrada
+│   ├── services/      # Lógica de Negocio y Transacciones
+│   ├── tests/         # Suite de Pruebas Automáticas
+│   ├── types/         # Definiciones de Tipos de TypeScript
+│   ├── utils/         # Helpers y Cron Jobs
+│   └── server.ts      # Punto de entrada
+└── package.json       # Dependencias y Scripts
 ```
-
-## ⚙️ Variables de Entorno
-
-| Variable | Descripción | Ejemplo |
-| :--- | :--- | :--- |
-| `PORT` | Puerto donde corre el servidor | `3000` |
-| `DATABASE_URL` | URL de conexión a PostgreSQL | `postgres://user:pass@localhost:5432/db` |
-| `JWT_SECRET` | Llave secreta para firmar tokens | `mi_secreto_123` |
-| `NODE_ENV` | Entorno (development/production) | `development` |
-| `FRONTEND_URL` | URL permitida por CORS (Soporta múltiples URLs separadas por coma) | `http://localhost:5173,https://tu-app.vercel.app` |
 
 ---
 
+## ⚙️ Variables de Entorno (Tabla Completa)
+
+| Variable | Descripción | Ejemplo |
+| :--- | :--- | :--- |
+| `PORT` | Puerto del servidor | `3000` |
+| `DATABASE_URL` | URL de PostgreSQL | `postgres://user:pass@host:port/db` |
+| `JWT_SECRET` | Llave para tokens | `mi_secreto_seguro_32_chars` |
+| `NODE_ENV` | Entorno | `development` / `production` |
+| `FRONTEND_URL` | Orígenes CORS | `http://localhost:5173` |
+| `EXCHANGE_RATE_API_KEY` | Clave API | `48999...` |

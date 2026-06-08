@@ -7,8 +7,8 @@ import { requireAuth } from '../middlewares/auth.middleware';
 import { AppError } from '../utils/AppError';
 import { AuthenticatedRequest } from '../types';
 
-describe('Error Middleware', () => {
-  it('should handle AppError correctly', () => {
+describe('Middleware de Errores', () => {
+  it('debería manejar AppError correctamente', () => {
     const mReq = {} as Request;
     const mRes = {
       status: vi.fn().mockReturnThis(),
@@ -26,7 +26,7 @@ describe('Error Middleware', () => {
     });
   });
 
-  it('should handle generic Error with 500 status', () => {
+  it('debería manejar un Error genérico con estado 500', () => {
     const mReq = {} as Request;
     const mRes = {
       status: vi.fn().mockReturnThis(),
@@ -49,8 +49,8 @@ describe('Error Middleware', () => {
   });
 });
 
-describe('Admin Middleware', () => {
-  it('should allow access if user is admin', () => {
+describe('Middleware de Administrador', () => {
+  it('debería permitir el acceso si el usuario es administrador', () => {
     const mReq = {
       user: { id: '1', email: 'admin@test.com', role: 'admin' }
     } as AuthenticatedRequest;
@@ -62,7 +62,7 @@ describe('Admin Middleware', () => {
     expect(mNext).toHaveBeenCalledWith();
   });
 
-  it('should deny access if user is not admin', () => {
+  it('debería denegar el acceso si el usuario no es administrador', () => {
     const mReq = {
       user: { id: '1', email: 'user@test.com', role: 'user' }
     } as AuthenticatedRequest;
@@ -77,7 +77,7 @@ describe('Admin Middleware', () => {
     expect(error.message).toContain('permisos de administrador');
   });
 
-  it('should deny access if no user is present', () => {
+  it('debería denegar el acceso si no hay usuario presente', () => {
     const mReq = {} as AuthenticatedRequest;
     const mRes = {} as Response;
     const mNext = vi.fn() as NextFunction;
@@ -90,8 +90,8 @@ describe('Admin Middleware', () => {
   });
 });
 
-describe('Auth Middleware', () => {
-  it('should allow access and attach user if token is valid', () => {
+describe('Middleware de Autenticación', () => {
+  it('debería permitir el acceso y adjuntar el usuario si el token es válido', () => {
     const mReq = {
       headers: { authorization: 'Bearer valid_token' }
     } as AuthenticatedRequest;
@@ -112,7 +112,7 @@ describe('Auth Middleware', () => {
     expect(mReq.user?.email).toBe('test@test.com');
   });
 
-  it('should deny access if no token is provided', () => {
+  it('debería denegar el acceso si no se proporciona un token', () => {
     const mReq = { headers: {} } as AuthenticatedRequest;
     const mRes = {} as Response;
     const mNext = vi.fn() as NextFunction;
@@ -125,7 +125,7 @@ describe('Auth Middleware', () => {
     expect(error.message).toContain('No se proporcionó un token');
   });
 
-  it('should deny access if token is invalid', () => {
+  it('debería denegar el acceso si el token es inválido', () => {
     const mReq = {
       headers: { authorization: 'Bearer invalid_token' }
     } as AuthenticatedRequest;
