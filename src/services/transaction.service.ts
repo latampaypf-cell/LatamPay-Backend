@@ -7,9 +7,13 @@ import { generateAlias, generateCBU } from '../utils/generators';
  * Devuelve el wallet_id del usuario. Si el usuario no tiene wallet,
  * la crea junto con los balances en cero para cada moneda fiat.
  * Pensado para cuentas legacy creadas antes del autobootstrap del register.
+ *
+ * Nota: tipamos `client` como `any` para no depender de @types/pg en el
+ * build de Railway (que instala solo dependencies, no devDependencies).
  */
 const ensureWallet = async (
-  client: import('pg').PoolClient,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  client: any,
   userId: string,
 ): Promise<string> => {
   const existing = await client.query(
