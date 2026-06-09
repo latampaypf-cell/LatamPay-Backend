@@ -61,7 +61,7 @@ describe('Servicio de Intercambio (Exchange & Swaps)', () => {
     });
   });
 
-  describe('POST /api/wallets/swap', () => {
+  describe('POST /api/exchange/swap', () => {
     it('debería realizar el cambio de divisa exitosamente', async () => {
       const mClient = {
         query: vi.fn()
@@ -78,7 +78,7 @@ describe('Servicio de Intercambio (Exchange & Swaps)', () => {
       (db.default.connect as any).mockResolvedValueOnce(mClient);
 
       const response = await request(app)
-        .post('/api/wallets/swap')
+        .post('/api/exchange/swap')
         .send({ from_currency: 'ARS', to_currency: 'COP', amount: 100 });
 
       expect(response.status).toBe(200);
@@ -97,7 +97,7 @@ describe('Servicio de Intercambio (Exchange & Swaps)', () => {
       (db.default.connect as any).mockResolvedValueOnce(mClient);
 
       const response = await request(app)
-        .post('/api/wallets/swap')
+        .post('/api/exchange/swap')
         .send({ from_currency: 'ARS', to_currency: 'COP', amount: 100 });
 
       expect(response.status).toBe(400);

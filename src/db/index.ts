@@ -1,4 +1,4 @@
-import { Pool } from 'pg';
+import { Pool, QueryResultRow } from 'pg';
 import dotenv from 'dotenv';
 
 // Nos aseguramos de leer las variables del archivo .env
@@ -17,10 +17,10 @@ const pool = new Pool({
  * Helper para realizar consultas a la base de datos de manera fácil en tus servicios.
  * Se encarga de abrir una conexión del pool, ejecutar la query y liberarla automáticamente.
  */
-export const query = async (text: string, params?: any[]) => {
+export const query = async <T extends QueryResultRow = any>(text: string, params?: unknown[]) => {
   const start = Date.now();
   try {
-    const res = await pool.query(text, params);
+    const res = await pool.query<T>(text, params);
     const duration = Date.now() - start;
     
     // Log en consola solo para desarrollo local (para ver qué queries se ejecutan y cuánto tardan)

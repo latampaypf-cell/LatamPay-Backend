@@ -22,7 +22,7 @@ export const withdrawSchema = z.object({
   currency_code: z.string().min(3).max(10),
 });
 
-export const historyQuerySchema = z.object({
-  page: z.coerce.number().int().positive().default(1),
-  limit: z.coerce.number().int().positive().max(100).default(10),
-});
+export type DepositInput = z.infer<typeof depositSchema>;
+export type SwapInput = z.infer<typeof swapSchema>;
+export type TransferInput = z.infer<typeof transferSchema>;
+export type WithdrawInput = z.infer<typeof withdrawSchema>;
