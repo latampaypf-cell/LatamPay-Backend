@@ -2,10 +2,12 @@ import express, { Application, Request, Response } from 'express';
 import cors from 'cors';
 import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from './docs/swagger';
-import apiRouter from './routes';
+import authRoutes from './routes/auth.routes';
+import exchangeRoutes from './routes/exchange.routes';
+import walletRoutes from './routes/wallet.routes';
+import transactionRoutes from './routes/transaction.routes';
 import { errorHandler } from './middlewares/error.middleware';
 import { corsOptions } from './config/cors';
-import { docsAuth } from './middlewares/docs.middleware';
 
 const app: Application = express();
 
@@ -20,13 +22,16 @@ app.use(express.json());
 // ====================================================================
 // DOCUMENTACIÓN SWAGGER
 // ====================================================================
-app.use('/api-docs', docsAuth, swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // ====================================================================
 // RUTAS
 // ====================================================================
 
-app.use('/api', apiRouter);
+app.use('/api/auth', authRoutes);
+app.use('/api/exchange', exchangeRoutes);
+app.use('/api/wallets', walletRoutes);
+app.use('/api/transactions', transactionRoutes);
 
 app.get('/health', (_req: Request, res: Response) => {
   res.status(200).json({ status: 'ok' });
@@ -34,7 +39,7 @@ app.get('/health', (_req: Request, res: Response) => {
 
 app.get('/', (req: Request, res: Response) => {
   res.json({
-    message: '¡Hola Facu! El backend de LatamPay está activo 🚀',
+    message: '¡Hola El backend de LatamPay está activo 🚀!' ,
     status: 'success',
     timestamp: new Date(),
   });

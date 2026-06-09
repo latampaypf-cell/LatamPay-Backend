@@ -1,28 +1,25 @@
 import { Request, Response, NextFunction } from 'express';
-import {  ZodError } from 'zod';
+import { ZodError, ZodSchema } from 'zod';
 import { AppError } from '../utils/AppError';
-
 
 /**
  * Middleware genérico para validar el body, query o params de una petición usando Zod.
  */
-export const validate = (schema: any, source: 'body' | 'query' | 'params' = 'body') => {
+export const validate = (schema: ZodSchema, source: 'body' | 'query' | 'params' = 'body') => {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const result = await schema.parseAsync(req[source]);
+      const result = await schema.parseAsync(req[source]) as Record<string, unknown>;
       
-      // En Express, req.body es escribible. 
-      // req.query y req.params a veces son getters read-only.
       if (source === 'body') {
         req.body = result;
       } else {
-        // Para query y params, intentamos mergear los valores transformados
-        // esto mantiene la referencia original pero actualiza los tipos (ej: string a number)
+        // Para query y params, intentamos actualizar los valores transformados
+        const target = req[source] as Record<string, unknown>;
         for (const key in result) {
           try {
-            (req[source] as any)[key] = result[key];
+            target[key] = result[key];
           } catch (e) {
-            // Si la propiedad individual es read-only, no podemos hacer nada
+            // Silenciamos errores si la propiedad es read-only
           }
         }
       }

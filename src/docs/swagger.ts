@@ -4,14 +4,8 @@ import { config } from '../config';
 import { swaggerComponents } from './components';
 
 const apiFiles = config.isProduction
-  ? [
-      path.join(__dirname, '../routes/*.js'),
-      path.join(__dirname, '../schemas/*.js'),
-    ]
-  : [
-      path.join(__dirname, '../routes/*.ts'),
-      path.join(__dirname, '../schemas/*.ts'),
-    ];
+     ? ['./dist/routes/*.js', './dist/schemas/*.js']
+  : ['./src/routes/*.ts', './src/schemas/*.ts'];
 
 const options: swaggerJsdoc.Options = {
   definition: {
@@ -26,9 +20,7 @@ const options: swaggerJsdoc.Options = {
     },
     servers: [
       {
-        url: config.isProduction
-          ? (config.backendUrl ?? '/')
-          : `http://localhost:${config.port}`,
+        url: config.isProduction ? '/' : `http://localhost:${config.port}`,
         description: config.isProduction ? 'Servidor de Producción' : 'Servidor de desarrollo',
       },
     ],
