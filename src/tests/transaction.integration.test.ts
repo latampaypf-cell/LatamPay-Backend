@@ -37,7 +37,7 @@ describe('Pruebas de Transacciones (Depósitos, Retiros, Transferencias e Histor
     vi.clearAllMocks();
   });
 
-  describe('POST /api/wallets/deposit', () => {
+  describe('POST /api/transactions/deposit', () => {
     it('debería depositar fondos exitosamente', async () => {
       const mClient = {
         query: vi.fn()
@@ -51,7 +51,7 @@ describe('Pruebas de Transacciones (Depósitos, Retiros, Transferencias e Histor
       (db.default.connect as any).mockResolvedValueOnce(mClient);
 
       const response = await request(app)
-        .post('/api/wallets/deposit')
+        .post('/api/transactions/deposit')
         .send({ amount: 1000, currency_code: 'ARS' });
 
       expect(response.status).toBe(200);
@@ -60,7 +60,7 @@ describe('Pruebas de Transacciones (Depósitos, Retiros, Transferencias e Histor
     });
   });
 
-  describe('POST /api/wallets/withdraw', () => {
+  describe('POST /api/transactions/withdraw', () => {
     it('debería retirar fondos exitosamente', async () => {
       const mClient = {
         query: vi.fn()
@@ -75,7 +75,7 @@ describe('Pruebas de Transacciones (Depósitos, Retiros, Transferencias e Histor
       (db.default.connect as any).mockResolvedValueOnce(mClient);
 
       const response = await request(app)
-        .post('/api/wallets/withdraw')
+        .post('/api/transactions/withdraw')
         .send({ amount: 500, currency_code: 'ARS' });
 
       expect(response.status).toBe(200);
@@ -95,7 +95,7 @@ describe('Pruebas de Transacciones (Depósitos, Retiros, Transferencias e Histor
       (db.default.connect as any).mockResolvedValueOnce(mClient);
 
       const response = await request(app)
-        .post('/api/wallets/withdraw')
+        .post('/api/transactions/withdraw')
         .send({ amount: 500, currency_code: 'ARS' });
 
       expect(response.status).toBe(400);
@@ -103,7 +103,7 @@ describe('Pruebas de Transacciones (Depósitos, Retiros, Transferencias e Histor
     });
   });
 
-  describe('POST /api/wallets/transfer', () => {
+  describe('POST /api/transactions/transfer', () => {
     it('debería transferir fondos exitosamente', async () => {
       const mClient = {
         query: vi.fn()
@@ -120,7 +120,7 @@ describe('Pruebas de Transacciones (Depósitos, Retiros, Transferencias e Histor
       (db.default.connect as any).mockResolvedValueOnce(mClient);
 
       const response = await request(app)
-        .post('/api/wallets/transfer')
+        .post('/api/transactions/transfer')
         .send({ to_identifier: 'latampay.dest.123', amount: 500, currency_code: 'ARS' });
 
       expect(response.status).toBe(200);
@@ -141,7 +141,7 @@ describe('Pruebas de Transacciones (Depósitos, Retiros, Transferencias e Histor
       (db.default.connect as any).mockResolvedValueOnce(mClient);
 
       const response = await request(app)
-        .post('/api/wallets/transfer')
+        .post('/api/transactions/transfer')
         .send({ to_identifier: 'inexistente', amount: 100, currency_code: 'ARS' });
 
       expect(response.status).toBe(404);
@@ -149,7 +149,7 @@ describe('Pruebas de Transacciones (Depósitos, Retiros, Transferencias e Histor
     });
   });
 
-  describe('GET /api/wallets/history', () => {
+  describe('GET /api/transactions/history', () => {
     it('debería obtener el historial de transacciones con paginación', async () => {
       (db.query as any)
         .mockResolvedValueOnce({ rows: [{ id: 'wallet-123' }] }) 
@@ -159,7 +159,7 @@ describe('Pruebas de Transacciones (Depósitos, Retiros, Transferencias e Histor
         ] }) 
         .mockResolvedValueOnce({ rows: [{ count: '2' }] });
 
-      const response = await request(app).get('/api/wallets/history?page=1&limit=10');
+      const response = await request(app).get('/api/transactions/history?page=1&limit=10');
 
       expect(response.status).toBe(200);
       expect(response.body.status).toBe('success');

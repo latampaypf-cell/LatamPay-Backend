@@ -5,7 +5,6 @@ import { errorHandler } from '../middlewares/error.middleware';
 import { requireAdmin } from '../middlewares/admin.middleware';
 import { requireAuth } from '../middlewares/auth.middleware';
 import { AppError } from '../utils/AppError';
-import { AuthenticatedRequest } from '../types';
 
 describe('Middleware de Errores', () => {
   it('debería manejar AppError correctamente', () => {
@@ -53,7 +52,7 @@ describe('Middleware de Administrador', () => {
   it('debería permitir el acceso si el usuario es administrador', () => {
     const mReq = {
       user: { id: '1', email: 'admin@test.com', role: 'admin' }
-    } as AuthenticatedRequest;
+    } as Request;
     const mRes = {} as Response;
     const mNext = vi.fn() as NextFunction;
 
@@ -65,7 +64,7 @@ describe('Middleware de Administrador', () => {
   it('debería denegar el acceso si el usuario no es administrador', () => {
     const mReq = {
       user: { id: '1', email: 'user@test.com', role: 'user' }
-    } as AuthenticatedRequest;
+    } as Request;
     const mRes = {} as Response;
     const mNext = vi.fn() as NextFunction;
 
@@ -78,7 +77,7 @@ describe('Middleware de Administrador', () => {
   });
 
   it('debería denegar el acceso si no hay usuario presente', () => {
-    const mReq = {} as AuthenticatedRequest;
+    const mReq = {} as Request;
     const mRes = {} as Response;
     const mNext = vi.fn() as NextFunction;
 
@@ -94,7 +93,7 @@ describe('Middleware de Autenticación', () => {
   it('debería permitir el acceso y adjuntar el usuario si el token es válido', () => {
     const mReq = {
       headers: { authorization: 'Bearer valid_token' }
-    } as AuthenticatedRequest;
+    } as Request;
     const mRes = {} as Response;
     const mNext = vi.fn() as NextFunction;
 
@@ -113,7 +112,7 @@ describe('Middleware de Autenticación', () => {
   });
 
   it('debería denegar el acceso si no se proporciona un token', () => {
-    const mReq = { headers: {} } as AuthenticatedRequest;
+    const mReq = { headers: {} } as Request;
     const mRes = {} as Response;
     const mNext = vi.fn() as NextFunction;
 
@@ -128,7 +127,7 @@ describe('Middleware de Autenticación', () => {
   it('debería denegar el acceso si el token es inválido', () => {
     const mReq = {
       headers: { authorization: 'Bearer invalid_token' }
-    } as AuthenticatedRequest;
+    } as Request;
     const mRes = {} as Response;
     const mNext = vi.fn() as NextFunction;
 
