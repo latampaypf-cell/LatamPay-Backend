@@ -3,6 +3,7 @@ import pool, { query } from '../db';
 import { AppError } from '../utils/AppError';
 
 import { generateAlias, generateCBU } from '../utils/generators';
+import { Transaction } from '../types/transaction.types';
 
 /**
  * Devuelve el wallet_id del usuario. Si el usuario no tiene wallet,
