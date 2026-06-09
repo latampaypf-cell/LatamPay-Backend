@@ -1,16 +1,63 @@
 import { randomUUID } from 'crypto';
 import pool, { query } from '../db';
 import { AppError } from '../utils/AppError';
-import { Transaction } from '../types/transaction.types';
+
+import { generateAlias, generateCBU } from '../utils/generators';
+
+/**
+ * Devuelve el wallet_id del usuario. Si el usuario no tiene wallet,
+ * la crea junto con los balances en cero para cada moneda fiat.
+ * Pensado para cuentas legacy creadas antes del autobootstrap del register.
+ */
+const ensureWallet = async (
+  client: import('pg').PoolClient,
+  userId: string,
+): Promise<string> => {
+  const existing = await client.query(
+    'SELECT id FROM wallets WHERE user_id = $1',
+    [userId],
+  );
+  if (existing.rows.length > 0) return existing.rows[0].id;
+
+  const userRes = await client.query(
+    'SELECT name FROM users WHERE id = $1',
+    [userId],
+  );
+  if (userRes.rows.length === 0) {
+    throw new AppError('Usuario no encontrado.', 404);
+  }
+
+  const walletId = randomUUID();
+  const cbu = generateCBU();
+  const alias = generateAlias(userRes.rows[0].name ?? 'user');
+
+  await client.query(
+    `INSERT INTO wallets (id, user_id, cbu, alias, created_at)
+     VALUES ($1, $2, $3, $4, NOW())`,
+    [walletId, userId, cbu, alias],
+  );
+
+  const fiats = await client.query(
+    `SELECT code FROM currencies WHERE type = 'fiat'`,
+  );
+  for (const row of fiats.rows) {
+    await client.query(
+      `INSERT INTO balances (id, wallet_id, currency_code, amount)
+       VALUES ($1, $2, $3, 0)`,
+      [randomUUID(), walletId, row.code],
+    );
+  }
+
+  return walletId;
+};
+
 
 export const depositFunds = async (userId: string, amount: number, currencyCode: string) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
 
-    const walletRes = await client.query('SELECT id FROM wallets WHERE user_id = $1', [userId]);
-    if (walletRes.rows.length === 0) throw new AppError('Billetera no encontrada.', 404);
-    const walletId = walletRes.rows[0].id;
+    const walletId = await ensureWallet(client, userId);
 
     await client.query(
       `INSERT INTO balances (id, wallet_id, currency_code, amount)
