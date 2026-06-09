@@ -1,7 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
-import { loginUser } from '../services/login.service';
+import { loginUser } from '../services/auth.service';
+import { LoginInput } from '../schemas/auth.schema';
 
-export const login = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const login = async (req: Request<{}, {}, LoginInput>, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { email, password } = req.body;
 

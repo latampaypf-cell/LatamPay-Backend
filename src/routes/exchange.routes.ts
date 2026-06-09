@@ -1,7 +1,9 @@
 import { Router } from 'express';
-import { getRates, triggerSync } from '../controllers/exchange.controller';
+import { getRates, triggerSync, swap } from '../controllers/exchange.controller';
 import { requireAuth } from '../middlewares/auth.middleware';
 import { requireAdmin } from '../middlewares/admin.middleware';
+import { validate } from '../middlewares/validate.middleware';
+import { swapSchema } from '../schemas/wallet.schema';
 
 const router = Router();
 
@@ -31,6 +33,40 @@ const router = Router();
  *                       updated_at: { type: string, format: date-time }
  */
 router.get('/rates', getRates);
+
+/**
+ * @swagger
+ * /api/exchange/swap:
+ *   post:
+ *     summary: Cambiar divisas (ej. ARS a COP)
+ *     tags: [Exchange]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - from_currency
+ *               - to_currency
+ *               - amount
+ *             properties:
+ *               from_currency:
+ *                 type: string
+ *                 example: ARS
+ *               to_currency:
+ *                 type: string
+ *                 example: COP
+ *               amount:
+ *                 type: number
+ *                 example: 500
+ *     responses:
+ *       200:
+ *         description: Cambio de divisa exitoso
+ */
+router.post('/swap', requireAuth, validate(swapSchema), swap);
 
 /**
  * @swagger

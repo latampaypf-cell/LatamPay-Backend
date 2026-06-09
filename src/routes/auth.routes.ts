@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, Request, Response } from 'express';
 import { login } from '../controllers/login.controller';
 import { register } from '../controllers/register.controller';
 import { requireAuth } from '../middlewares/auth.middleware';
@@ -120,7 +120,7 @@ router.post('/register', validate(registerSchema), register);
  *           application/json:
  *             schema: { $ref: '#/components/schemas/Error' }
  */
-router.get('/me', requireAuth, (req: any, res) => {
+router.get('/me', requireAuth, (req: Request, res: Response) => {
   res.json({
     status: 'success',
     message: '¡Acceso concedido! Tu sesión es válida 🔐',

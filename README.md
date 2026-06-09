@@ -37,6 +37,7 @@ El proyecto sigue una arquitectura de capas modularizada para garantizar el desa
 *   **`src/schemas`**: Definición de contratos de validación con Zod.
 *   **`src/tests`**: Suite completa de pruebas de integración modularizada.
 *   **`src/utils`**: Generadores (CBU/Alias) y tareas programadas.
+*   **`src/types`**: Contratos de datos estrictos para asegurar el flujo de información (Type-Safe).
 
 ## 🗄️ Modelo de Datos (PostgreSQL)
 
@@ -156,6 +157,7 @@ erDiagram
 *   **Identidad y Billetera**: Cada usuario tiene una relación **1:1** con su billetera. Al registrarse, el sistema genera automáticamente un **CBU de 22 dígitos** y un **Alias único**, siguiendo estándares reales.
 *   **Gestión Multi-Moneda**: Uso de una tabla de `balances` segregada para soportar múltiples divisas (ARS, COP, VES, etc.) por billetera.
 *   **Transacciones Atómicas**: Registro de usuarios y operaciones financieras envueltos en transacciones SQL (**BEGIN/COMMIT**) para garantizar la integridad.
+*   **Sincronización de Divisas (API Externa)**: El sistema consume la API de [ExchangeRate-API](https://www.exchangerate-api.com/) para obtener tasas en tiempo real. Un **Cron Job** automatizado actualiza estos valores cada hora, permitiendo realizar conversiones (Swaps) precisas entre ARS, COP y VES.
 *   **Seguridad**: Hasheo de contraseñas con **Bcrypt.js** y protección de rutas mediante **JWT**.
 
 ## 🚀 Instalación y Configuración
@@ -175,7 +177,7 @@ erDiagram
     JWT_SECRET=tu_secreto_super_seguro
     NODE_ENV=development
     FRONTEND_URL=http://localhost:5173
-    EXCHANGE_RATE_API_KEY=tu_api_key_aqui
+    EXCHANGE_RATE_API_KEY=tu_api_key_de_exchangerate_api
     ```
 
 3.  **Preparar Base de Datos:**
@@ -226,14 +228,15 @@ La documentación interactiva completa está disponible en: 👉 **`http://local
 | `POST` | `/api/auth/login` | Público | Login y obtención de JWT. |
 | `GET` | `/api/auth/me` | Privado | Datos del perfil del usuario. |
 | `GET` | `/api/exchange/rates` | Público | Ver tasas (ARS, COP, VES). |
+| `POST` | `/api/exchange/swap` | Privado | Cambiar de moneda (ej: ARS a COP). |
+| `POST` | `/api/exchange/sync` | Admin | Forzar actualización de tasas. |
 | `GET` | `/api/wallets/me` | Privado | Ver CBU, Alias y saldos. |
 | `GET` | `/api/wallets/lookup/:id` | Privado | Buscar destinatario por CBU o Alias. |
 | `GET` | `/api/wallets/contacts` | Privado | Ver contactos frecuentes (ya transferidos). |
-| `POST` | `/api/wallets/deposit` | Privado | Cargar fondos a la billetera (Simulado). |
-| `POST` | `/api/wallets/withdraw` | Privado | Retirar fondos de la billetera (Simulado). |
-| `POST` | `/api/wallets/swap` | Privado | Cambiar de moneda (ej: ARS a COP). |
-| `POST` | `/api/wallets/transfer` | Privado | Enviar dinero a otro usuario. |
-| `GET` | `/api/wallets/history` | Privado | Historial de transacciones paginado. |
+| `POST` | `/api/transactions/deposit` | Privado | Cargar fondos a la billetera (Simulado). |
+| `POST` | `/api/transactions/withdraw` | Privado | Retirar fondos de la billetera (Simulado). |
+| `POST` | `/api/transactions/transfer` | Privado | Enviar dinero a otro usuario. |
+| `GET` | `/api/transactions/history` | Privado | Historial de transacciones paginado. |
 
 ### 💡 Tips para el Frontend
 1.  **Seguridad:** Todas las rutas marcadas como `Privado` requieren el header `Authorization: Bearer [TOKEN]`.
@@ -253,6 +256,14 @@ La documentación interactiva completa está disponible en: 👉 **`http://local
 *   [x] Tarea programada (Cron Job) para actualización de divisas.
 *   [x] **Modularización basada en SOLID** y Clean Architecture.
 *   [x] Cobertura de tests modularizada (**34 tests exitosos**).
+*   [x] Sistema 100% **Type-Safe** (Eliminación de `any` y tipado estricto en servicios/DB).
+
+## 🗺️ Roadmap (Próximas Mejoras)
+*   [ ] **Notificaciones por Email:** Integración con AWS SES para comprobantes y bienvenida.
+*   [ ] **Filtros Avanzados:** Filtrar historial por fecha, moneda y tipo de operación.
+*   [ ] **Seguridad Avanzada:** Implementación de Refresh Tokens y 2FA.
+*   [ ] **Dashboard Admin:** Métricas de volumen transaccionado y gestión de usuarios.
+*   [ ] **Exportación:** Generar recibos en PDF y reportes en CSV.
 
 ---
 

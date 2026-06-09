@@ -1,6 +1,7 @@
 import { randomUUID } from 'crypto';
 import pool, { query } from '../db';
 import { AppError } from '../utils/AppError';
+
 import { generateAlias, generateCBU } from '../utils/generators';
 
 /**
@@ -49,6 +50,7 @@ const ensureWallet = async (
 
   return walletId;
 };
+
 
 export const depositFunds = async (userId: string, amount: number, currencyCode: string) => {
   const client = await pool.connect();
@@ -176,11 +178,11 @@ export const transferFunds = async (userId: string, toIdentifier: string, amount
 export const getTransactionHistory = async (userId: string, page: number, limit: number) => {
   const offset = (page - 1) * limit;
 
-  const walletRes = await query('SELECT id FROM wallets WHERE user_id = $1', [userId]);
+  const walletRes = await query<{ id: string }>('SELECT id FROM wallets WHERE user_id = $1', [userId]);
   if (walletRes.rows.length === 0) throw new AppError('Billetera no encontrada.', 404);
   const walletId = walletRes.rows[0].id;
 
-  const historyRes = await query(
+  const historyRes = await query<Transaction & { direction: 'sent' | 'received' }>(
     `SELECT 
       t.id, t.type, t.status, t.from_currency, t.to_currency, 
       t.from_amount, t.to_amount, t.exchange_rate, t.created_at,
@@ -195,7 +197,7 @@ export const getTransactionHistory = async (userId: string, page: number, limit:
     [walletId, limit, offset]
   );
 
-  const countRes = await query(
+   const countRes = await query<{ count: string }>(
     'SELECT COUNT(*) FROM transactions WHERE from_wallet_id = $1 OR to_wallet_id = $1',
     [walletId]
   );
