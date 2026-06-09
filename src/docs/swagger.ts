@@ -20,7 +20,7 @@ const options: swaggerJsdoc.Options = {
     },
     servers: [
       {
-        url: config.isProduction ? '/' : `http://localhost:${config.port}`,
+        url: config.isProduction ? (config.serverUrl || '/') : `http://localhost:${config.port}`,
         description: config.isProduction ? 'Servidor de Producción' : 'Servidor de desarrollo',
       },
     ],
