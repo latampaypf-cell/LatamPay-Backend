@@ -1,10 +1,10 @@
-import { Response, NextFunction } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { AuthenticatedRequest } from '../types';
+import { JwtPayload } from '../types/auth.types';
 import { config } from '../config';
 import { AppError } from '../utils/AppError';
 
-export const requireAuth = (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
+export const requireAuth = (req: Request, res: Response, next: NextFunction): void => {
   try {
     // 1. Verificar header Authorization
     const authHeader = req.headers.authorization;
@@ -15,7 +15,7 @@ export const requireAuth = (req: AuthenticatedRequest, res: Response, next: Next
 
     // 2. Extraer y verificar el token
     const token = authHeader.split(' ')[1];
-    const decoded = jwt.verify(token, config.jwtSecret) as { id: string; email: string; role: string };
+    const decoded = jwt.verify(token, config.jwtSecret) as JwtPayload;
 
     // 3. Adjuntar el payload al request para los controllers
     req.user = decoded;

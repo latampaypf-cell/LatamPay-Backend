@@ -1,7 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
-import { registerUser } from '../services/register.service';
+import { registerUser } from '../services/auth.service';
+import { RegisterInput } from '../schemas/auth.schema';
 
-export const register = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const register = async (req: Request<{}, {}, RegisterInput>, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { name, email, password } = req.body;
 

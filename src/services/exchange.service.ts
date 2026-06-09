@@ -67,8 +67,9 @@ export const syncExchangeRates = async (): Promise<void> => {
     } finally {
       client.release();
     }
-  } catch (error: any) {
-    console.error('❌ Error sincronizando tasas:', error.message);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Error desconocido';
+    console.error('❌ Error sincronizando tasas:', message);
     // No lanzamos error para no romper procesos en segundo plano, solo logueamos
   }
 };
@@ -77,7 +78,7 @@ export const syncExchangeRates = async (): Promise<void> => {
  * Obtiene todas las tasas de cambio almacenadas en la base de datos.
  */
 export const getStoredExchangeRates = async () => {
-  const result = await pool.query(
+  const result = await pool.query<{ from_currency: string; to_currency: string; rate: number; updated_at: Date }>(
     'SELECT from_currency, to_currency, rate, updated_at FROM exchange_rates'
   );
   return result.rows;
