@@ -12,5 +12,12 @@ export interface Transaction {
   from_amount: number;
   to_amount: number;
   exchange_rate?: number;
+  description?: string;
+  from_name?: string;
+  from_alias?: string;
+  from_cbu?: string;
+  to_name?: string;
+  to_alias?: string;
+  to_cbu?: string;
   created_at: Date;
 }

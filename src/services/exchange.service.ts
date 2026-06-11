@@ -87,7 +87,7 @@ export const getStoredExchangeRates = async () => {
 /**
  * Realiza un intercambio de divisas (Swap)
  */
-export const swapCurrency = async (userId: string, fromCurrency: string, toCurrency: string, amount: number) => {
+export const swapCurrency = async (userId: string, fromCurrency: string, toCurrency: string, amount: number, userDescription?: string) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -130,13 +130,18 @@ export const swapCurrency = async (userId: string, fromCurrency: string, toCurre
     // 4. Registrar transacción
     const txId = randomUUID();
     await client.query(
-      `INSERT INTO transactions (id, type, status, from_wallet_id, to_wallet_id, from_currency, to_currency, from_amount, to_amount, exchange_rate)
-       VALUES ($1, 'swap', 'completed', $2, $2, $3, $4, $5, $6, $7)`,
-      [txId, walletId, fromCurrency, toCurrency, amount, toAmount, rate]
+      `INSERT INTO transactions (id, type, status, from_wallet_id, to_wallet_id, from_currency, to_currency, from_amount, to_amount, exchange_rate, description)
+       VALUES ($1, 'swap', 'completed', $2, $2, $3, $4, $5, $6, $7, $8)`,
+      [txId, walletId, fromCurrency, toCurrency, amount, toAmount, rate, `Swap de ${fromCurrency} a ${toCurrency}`]
     );
 
     await client.query('COMMIT');
-    return { transactionId: txId, fromAmount: amount, toAmount, rate };
+    
+    // Importamos dinámicamente para evitar dependencia circular si fuera necesario, 
+    // pero como ya tenemos la lógica de SELECT en transaction service, 
+    // lo ideal es que swap también devuelva el objeto rico.
+    const { getTransactionById } = require('./transaction.service');
+    return await getTransactionById(txId);
   } catch (error) {
     await client.query('ROLLBACK');
     throw error;

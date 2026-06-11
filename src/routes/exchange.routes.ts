@@ -62,9 +62,19 @@ router.get('/rates', getRates);
  *               amount:
  *                 type: number
  *                 example: 500
+ *               description:
+ *                 type: string
+ *                 example: "Ahorro en pesos colombianos"
  *     responses:
  *       200:
  *         description: Cambio de divisa exitoso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status: { type: string, example: success }
+ *                 data: { $ref: '#/components/schemas/Transaction' }
  */
 router.post('/swap', requireAuth, validate(swapSchema), swap);
 
