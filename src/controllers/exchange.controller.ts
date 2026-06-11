@@ -16,8 +16,8 @@ export const getRates = async (_req: Request, res: Response, next: NextFunction)
 
 export const swap = async (req: Request<{}, {}, SwapInput>, res: Response, next: NextFunction) => {
   try {
-    const { from_currency, to_currency, amount } = req.body;
-    const result = await swapCurrency(req.user!.id, from_currency, to_currency, amount);
+    const { from_currency, to_currency, amount, description } = req.body;
+    const result = await swapCurrency(req.user!.id, from_currency, to_currency, amount, description);
     res.status(200).json({ status: 'success', data: result });
   } catch (error) {
     next(error);

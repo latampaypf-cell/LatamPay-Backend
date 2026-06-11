@@ -6,6 +6,7 @@ import authRoutes from './routes/auth.routes';
 import exchangeRoutes from './routes/exchange.routes';
 import walletRoutes from './routes/wallet.routes';
 import transactionRoutes from './routes/transaction.routes';
+import supportRoutes from './routes/support.routes';
 import { errorHandler } from './middlewares/error.middleware';
 import { corsOptions } from './config/cors';
 
@@ -32,6 +33,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/exchange', exchangeRoutes);
 app.use('/api/wallets', walletRoutes);
 app.use('/api/transactions', transactionRoutes);
+app.use('/api/support', supportRoutes);
 
 app.get('/health', (_req: Request, res: Response) => {
   res.status(200).json({ status: 'ok' });

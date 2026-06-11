@@ -43,6 +43,15 @@ export const swaggerComponents = {
         },
       },
     },
+    PaginationInfo: {
+      type: 'object',
+      properties: {
+        totalItems: { type: 'integer' },
+        totalPages: { type: 'integer' },
+        currentPage: { type: 'integer' },
+        limit: { type: 'integer' },
+      },
+    },
     Transaction: {
       type: 'object',
       properties: {
@@ -55,6 +64,13 @@ export const swaggerComponents = {
         to_amount: { type: 'number' },
         exchange_rate: { type: 'number', nullable: true },
         direction: { type: 'string', enum: ['sent', 'received'], nullable: true },
+        description: { type: 'string', example: 'Pago Alquiler Junio' },
+        from_name: { type: 'string', nullable: true },
+        from_alias: { type: 'string', nullable: true },
+        from_cbu: { type: 'string', nullable: true },
+        to_name: { type: 'string', nullable: true },
+        to_alias: { type: 'string', nullable: true },
+        to_cbu: { type: 'string', nullable: true },
         created_at: { type: 'string', format: 'date-time' },
       },
     },

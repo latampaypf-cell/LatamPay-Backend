@@ -34,9 +34,19 @@ router.use(requireAuth);
  *               currency_code:
  *                 type: string
  *                 example: ARS
+ *               description:
+ *                 type: string
+ *                 example: "Carga de saldo mensual"
  *     responses:
  *       200:
  *         description: Depósito exitoso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status: { type: string, example: success }
+ *                 data: { $ref: '#/components/schemas/Transaction' }
  */
 router.post('/deposit', validate(depositSchema), deposit);
 
@@ -64,9 +74,19 @@ router.post('/deposit', validate(depositSchema), deposit);
  *               currency_code:
  *                 type: string
  *                 example: ARS
+ *               description:
+ *                 type: string
+ *                 example: "Retiro para efectivo"
  *     responses:
  *       200:
  *         description: Retiro exitoso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status: { type: string, example: success }
+ *                 data: { $ref: '#/components/schemas/Transaction' }
  */
 router.post('/withdraw', validate(withdrawSchema), withdraw);
 
@@ -98,9 +118,19 @@ router.post('/withdraw', validate(withdrawSchema), withdraw);
  *               currency_code:
  *                 type: string
  *                 example: ARS
+ *               description:
+ *                 type: string
+ *                 example: "Mitad del asado"
  *     responses:
  *       200:
  *         description: Transferencia exitosa
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status: { type: string, example: success }
+ *                 data: { $ref: '#/components/schemas/Transaction' }
  */
 router.post('/transfer', validate(transferSchema), transfer);
 
@@ -128,6 +158,19 @@ router.post('/transfer', validate(transferSchema), transfer);
  *     responses:
  *       200:
  *         description: Historial de transacciones
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status: { type: string, example: success }
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     transactions:
+ *                       type: array
+ *                       items: { $ref: '#/components/schemas/Transaction' }
+ *                     pagination: { $ref: '#/components/schemas/PaginationInfo' }
  */
 router.get('/history', validate(paginationSchema, 'query'), getHistory);
 

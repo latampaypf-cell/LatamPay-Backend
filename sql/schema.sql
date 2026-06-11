@@ -61,6 +61,7 @@ CREATE TABLE transactions (
     from_amount    NUMERIC(19, 8) NOT NULL CHECK (from_amount > 0),
     to_amount      NUMERIC(19, 8) NOT NULL CHECK (to_amount > 0),
     exchange_rate  NUMERIC(19, 8) CHECK (exchange_rate > 0), -- Nullable: no aplica en depósitos/retiros simples
+    description    VARCHAR(255),
     created_at     TIMESTAMP      DEFAULT CURRENT_TIMESTAMP
 );
 

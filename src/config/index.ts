@@ -13,6 +13,8 @@ const envSchema = z.object({
   FRONTEND_URL: z.string().optional(),
   SERVER_URL:   z.string().url().optional(),
   EXCHANGE_RATE_API_KEY: z.string().min(1, 'Falta la API Key de ExchangeRate-API.'),
+  GEMINI_API_KEY: z.string().min(1, 'Falta la API Key de Google Gemini.'),
+  MOCK_BOT: z.string().optional().transform(val => val === 'true'),
 });
 
 const parsed = envSchema.safeParse(process.env);
@@ -34,6 +36,8 @@ export const config = {
   frontendUrl:  parsed.data?.FRONTEND_URL,
   serverUrl:    parsed.data?.SERVER_URL,
   exchangeRateApiKey: parsed.data?.EXCHANGE_RATE_API_KEY ?? 'mock_key',
+  geminiApiKey: parsed.data?.GEMINI_API_KEY ?? '',
+  mockBot:      parsed.data?.MOCK_BOT ?? false,
 } as const;
 
 export default config;

@@ -8,7 +8,8 @@ describe('Ruta Raíz de la App', () => {
 
     expect(response.status).toBe(200);
     expect(response.body.status).toBe('success');
-    expect(response.body.message).toContain('¡Hola Facu!');
+    expect(response.body.message).toContain('¡Hola');
+    expect(response.body.message).toContain('LatamPay');
   });
 
   it('debería retornar 404 para rutas desconocidas', async () => {

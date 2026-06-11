@@ -5,7 +5,8 @@ import { PaginationQuery } from '../schemas/common.schema';
 
 export const deposit = async (req: Request<{}, {}, DepositInput>, res: Response, next: NextFunction) => {
   try {
-    const result = await transactionService.depositFunds(req.user!.id, req.body.amount, req.body.currency_code);
+    const { amount, currency_code, description } = req.body;
+    const result = await transactionService.depositFunds(req.user!.id, amount, currency_code, description);
     res.status(200).json({ status: 'success', data: result });
   } catch (error) {
     next(error);
@@ -14,7 +15,8 @@ export const deposit = async (req: Request<{}, {}, DepositInput>, res: Response,
 
 export const withdraw = async (req: Request<{}, {}, WithdrawInput>, res: Response, next: NextFunction) => {
   try {
-    const result = await transactionService.withdrawFunds(req.user!.id, req.body.amount, req.body.currency_code);
+    const { amount, currency_code, description } = req.body;
+    const result = await transactionService.withdrawFunds(req.user!.id, amount, currency_code, description);
     res.status(200).json({ status: 'success', data: result });
   } catch (error) {
     next(error);
@@ -23,8 +25,8 @@ export const withdraw = async (req: Request<{}, {}, WithdrawInput>, res: Respons
 
 export const transfer = async (req: Request<{}, {}, TransferInput>, res: Response, next: NextFunction) => {
   try {
-    const { to_identifier, amount, currency_code } = req.body;
-    const result = await transactionService.transferFunds(req.user!.id, to_identifier, amount, currency_code);
+    const { to_identifier, amount, currency_code, description } = req.body;
+    const result = await transactionService.transferFunds(req.user!.id, to_identifier, amount, currency_code, description);
     res.status(200).json({ status: 'success', data: result });
   } catch (error) {
     next(error);
