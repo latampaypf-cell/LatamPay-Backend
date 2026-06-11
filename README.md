@@ -17,6 +17,7 @@ API REST robusta para **LatamPay**, una plataforma de pagos y transferencias dis
 *   **Autenticación:** JWT (JSON Web Tokens) & Bcrypt.js
 *   **Validación de Datos:** Zod (Middleware de validación centralizado)
 *   **Documentación:** Swagger (OpenAPI 3.0) con componentes reutilizables
+*   **Asistente IA:** Google Gemini (Respuestas personalizadas y públicas)
 *   **Testing:** Vitest 3+ & Supertest (34 tests de integración pasando)
 *   **Tareas Programadas:** node-cron (Sincronización horaria de divisas)
 *   **Logs & Tooling:** ts-node-dev, dotenv, CORS modularizado
@@ -28,9 +29,10 @@ El proyecto sigue una arquitectura de capas modularizada para garantizar el desa
 *   **`src/routes`**: Definición de endpoints con validación automática mediante middleware genérico.
 *   **`src/controllers`**: Orquestación de peticiones y respuestas (Thin Controllers).
 *   **`src/services`**: Lógica de negocio pura dividida por dominios (SRP):
-    *   `transaction.service.ts`: Depósitos, retiros, transferencias e historial.
+    *   `transaction.service.ts`: Depósitos, retiros, transferencias e historial (con enriquecimiento de datos del emisor/receptor).
     *   `exchange.service.ts`: Sincronización de tasas y swaps de divisas.
     *   `wallet.service.ts`: Gestión de cuentas, búsqueda y contactos.
+    *   `public-support.service.ts` y `user-support.service.ts`: Asistencia inteligente con IA para visitantes y usuarios registrados.
 *   **`src/middlewares`**: Seguridad (Auth), validación (Zod) y gestión global de errores.
 *   **`src/docs`**: Documentación interactiva Swagger modularizada con esquemas compartidos.
 *   **`src/db`**: Capa de infraestructura para PostgreSQL con soporte para SSL en producción.
@@ -115,6 +117,7 @@ erDiagram
         NUMERIC from_amount
         NUMERIC to_amount
         NUMERIC exchange_rate
+        VARCHAR description
         TIMESTAMP created_at
     }
 ```
@@ -157,7 +160,11 @@ erDiagram
 *   **Identidad y Billetera**: Cada usuario tiene una relación **1:1** con su billetera. Al registrarse, el sistema genera automáticamente un **CBU de 22 dígitos** y un **Alias único**, siguiendo estándares reales.
 *   **Gestión Multi-Moneda**: Uso de una tabla de `balances` segregada para soportar múltiples divisas (ARS, COP, VES, etc.) por billetera.
 *   **Transacciones Atómicas**: Registro de usuarios y operaciones financieras envueltos en transacciones SQL (**BEGIN/COMMIT**) para garantizar la integridad.
+*   **Historial de Transacciones Enriquecido**: Para mayor claridad y trazabilidad, el historial de transferencias ahora incluye datos clave del emisor y receptor (nombre completo, alias y CBU).
 *   **Sincronización de Divisas (API Externa)**: El sistema consume la API de [ExchangeRate-API](https://www.exchangerate-api.com/) para obtener tasas en tiempo real. Un **Cron Job** automatizado actualiza estos valores cada hora, permitiendo realizar conversiones (Swaps) precisas entre ARS, COP y VES.
+*   **Asistente de Soporte con IA (Gemini)**: Se integra un chatbot inteligente para mejorar la experiencia del usuario, con dos modos de operación:
+    *   **Chat Público**: Responde preguntas generales sobre el funcionamiento de LatamPay a visitantes no registrados, basado en un prompt con información clave del negocio.
+    *   **Chat Privado**: Ofrece asistencia personalizada a usuarios autenticados, accediendo a su información de cuenta (nombre, alias, saldos) para dar respuestas precisas y contextuales sobre sus finanzas, sin poder realizar operaciones.
 *   **Seguridad**: Hasheo de contraseñas con **Bcrypt.js** y protección de rutas mediante **JWT**.
 
 ## 🚀 Instalación y Configuración
@@ -177,7 +184,10 @@ erDiagram
     JWT_SECRET=tu_secreto_super_seguro
     NODE_ENV=development
     FRONTEND_URL=http://localhost:5173
+    SERVER_URL=http://localhost:3000
     EXCHANGE_RATE_API_KEY=tu_api_key_de_exchangerate_api
+    GEMINI_API_KEY=tu_gemini_api_key_aqui
+    MOCK_BOT=true
     ```
 
 3.  **Preparar Base de Datos:**
@@ -219,10 +229,12 @@ erDiagram
 ## 🔐 API Endpoints
 
 La documentación interactiva completa está disponible en: 👉 **`http://localhost:3000/api-docs`**
-
-### Resumen de Rutas
-| Método | Endpoint | Acceso | Descripción |
-| :--- | :--- | :--- | :--- |
+--- | :--- | :--- | :--- |
+| `GET` | `/` | Público | Verificación del estado del servidor. |
+| `POST` | `/api/auth/register` | Público | Registro de usuario y billetera. |
+| `POST` | `/api/auth/login` | Público | Login y obtención de JWT. |
+| `POST` | `/api/support/public` | Público | Chat de ayuda para visitantes. |
+| `POST` | `/api/support/user` | Privado | Chat de ayuda para usuarios logueados
 | `GET` | `/` | Público | Verificación del estado del servidor. |
 | `POST` | `/api/auth/register` | Público | Registro de usuario y billetera. |
 | `POST` | `/api/auth/login` | Público | Login y obtención de JWT. |
@@ -248,6 +260,8 @@ La documentación interactiva completa está disponible en: 👉 **`http://local
 ## ✅ Funcionalidades Implementadas
 *   [x] Autenticación JWT y Registro con creación automática de billetera.
 *   [x] Billetera multidivisa (ARS, COP, VES).
+*   [x] **Asistente de IA (Gemini)** con chat público y privado.
+*   [x] Historial de transacciones con **datos enriquecidos** (nombre, alias y CBU del destinatario).
 *   [x] Depósitos y **Retiros** de fondos con transacciones atómicas.
 *   [x] Cambio de divisas (Swap) con tasas reales sincronizadas.
 *   [x] Transferencias entre usuarios por CBU o Alias.
@@ -258,14 +272,6 @@ La documentación interactiva completa está disponible en: 👉 **`http://local
 *   [x] Cobertura de tests modularizada (**34 tests exitosos**).
 *   [x] Sistema 100% **Type-Safe** (Eliminación de `any` y tipado estricto en servicios/DB).
 
-## 🗺️ Roadmap (Próximas Mejoras)
-*   [ ] **Notificaciones por Email:** Integración con AWS SES para comprobantes y bienvenida.
-*   [ ] **Filtros Avanzados:** Filtrar historial por fecha, moneda y tipo de operación.
-*   [ ] **Seguridad Avanzada:** Implementación de Refresh Tokens y 2FA.
-*   [ ] **Dashboard Admin:** Métricas de volumen transaccionado y gestión de usuarios.
-*   [ ] **Exportación:** Generar recibos en PDF y reportes en CSV.
-
----
 
 ## 🔒 Seguridad e Integridad
 *   **Aislamiento de Transacciones:** Todas las operaciones que involucran dinero usan el motor de transacciones de PostgreSQL (`BEGIN/COMMIT/ROLLBACK`), garantizando que no se pierdan fondos ante fallos.
@@ -313,5 +319,8 @@ LatamPay-Backend/
 | `DATABASE_URL` | URL de PostgreSQL | `postgres://user:pass@host:port/db` |
 | `JWT_SECRET` | Llave para tokens | `mi_secreto_seguro_32_chars` |
 | `NODE_ENV` | Entorno | `development` / `production` |
-| `FRONTEND_URL` | Orígenes CORS | `http://localhost:5173` |
-| `EXCHANGE_RATE_API_KEY` | Clave API | `48999...` |
+| `FRONTEND_URL` | Orígenes CORS permitidos | `http://localhost:5173` |
+| `SERVER_URL` | URL base del servidor para Swagger | `http://localhost:3000` |
+| `EXCHANGE_RATE_API_KEY` | Clave API de ExchangeRate | `tu_api_key_aqui` |
+| `GEMINI_API_KEY` | Clave API de Google Gemini | `tu_gemini_api_key_aqui` |
+| `MOCK_BOT` | Activa respuestas de prueba del bot | `true` / `false` |

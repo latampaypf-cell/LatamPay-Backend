@@ -1,4 +1,5 @@
 import { randomUUID } from 'crypto';
+import { PoolClient } from 'pg';
 import pool, { query } from '../db';
 import { AppError } from '../utils/AppError';
 
@@ -9,13 +10,9 @@ import { Transaction } from '../types/transaction.types';
  * Devuelve el wallet_id del usuario. Si el usuario no tiene wallet,
  * la crea junto con los balances en cero para cada moneda fiat.
  * Pensado para cuentas legacy creadas antes del autobootstrap del register.
- *
- * Nota: tipamos `client` como `any` para no depender de @types/pg en el
- * build de Railway (que instala solo dependencies, no devDependencies).
  */
 const ensureWallet = async (
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  client: any,
+  client: PoolClient,
   userId: string,
 ): Promise<string> => {
   const existing = await client.query(
@@ -57,7 +54,30 @@ const ensureWallet = async (
 };
 
 
-export const depositFunds = async (userId: string, amount: number, currencyCode: string) => {
+/**
+ * Obtiene una transacción detallada por su ID, incluyendo nombres, alias y CBUs.
+ */
+export const getTransactionById = async (id: string, client?: PoolClient): Promise<Transaction | null> => {
+  const sql = `SELECT 
+      t.*, 
+      u_from.name as from_name, w_from.alias as from_alias, w_from.cbu as from_cbu,
+      u_to.name as to_name, w_to.alias as to_alias, w_to.cbu as to_cbu
+     FROM transactions t
+     LEFT JOIN wallets w_from ON t.from_wallet_id = w_from.id
+     LEFT JOIN users u_from ON w_from.user_id = u_from.id
+     LEFT JOIN wallets w_to ON t.to_wallet_id = w_to.id
+     LEFT JOIN users u_to ON w_to.user_id = u_to.id
+     WHERE t.id = $1`;
+  const params = [id];
+
+  const res = client 
+    ? await client.query<Transaction>(sql, params)
+    : await query<Transaction>(sql, params);
+
+  return res.rows[0] || null;
+};
+
+export const depositFunds = async (userId: string, amount: number, currencyCode: string, userDescription?: string) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -73,14 +93,17 @@ export const depositFunds = async (userId: string, amount: number, currencyCode:
     );
 
     const txId = randomUUID();
+    const finalDescription = userDescription || `Depósito de ${amount} ${currencyCode}`;
     await client.query(
-      `INSERT INTO transactions (id, type, status, to_wallet_id, to_currency, from_amount, to_amount, from_currency)
-       VALUES ($1, 'deposit', 'completed', $2, $3, $4, $4, $3)`,
-      [txId, walletId, currencyCode, amount]
+      `INSERT INTO transactions (id, type, status, to_wallet_id, to_currency, from_amount, to_amount, from_currency, description)
+       VALUES ($1, 'deposit', 'completed', $2, $3, $4, $4, $3, $5)`,
+      [txId, walletId, currencyCode, amount, finalDescription]
     );
 
     await client.query('COMMIT');
-    return { transactionId: txId, amount, currency: currencyCode };
+    
+    // Devolvemos el objeto enriquecido usando el mismo cliente de la conexión
+    return await getTransactionById(txId, client);
   } catch (error) {
     await client.query('ROLLBACK');
     throw error;
@@ -89,7 +112,7 @@ export const depositFunds = async (userId: string, amount: number, currencyCode:
   }
 };
 
-export const withdrawFunds = async (userId: string, amount: number, currencyCode: string) => {
+export const withdrawFunds = async (userId: string, amount: number, currencyCode: string, userDescription?: string) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -111,14 +134,15 @@ export const withdrawFunds = async (userId: string, amount: number, currencyCode
     );
 
     const txId = randomUUID();
+    const finalDescription = userDescription || `Retiro de ${amount} ${currencyCode}`;
     await client.query(
-      `INSERT INTO transactions (id, type, status, from_wallet_id, from_currency, from_amount, to_amount, to_currency)
-       VALUES ($1, 'withdraw', 'completed', $2, $3, $4, $4, $3)`,
-      [txId, walletId, currencyCode, amount]
+      `INSERT INTO transactions (id, type, status, from_wallet_id, from_currency, from_amount, to_amount, to_currency, description)
+       VALUES ($1, 'withdraw', 'completed', $2, $3, $4, $4, $3, $5)`,
+      [txId, walletId, currencyCode, amount, finalDescription]
     );
 
     await client.query('COMMIT');
-    return { transactionId: txId, amount, currency: currencyCode };
+    return await getTransactionById(txId, client);
   } catch (error) {
     await client.query('ROLLBACK');
     throw error;
@@ -127,7 +151,7 @@ export const withdrawFunds = async (userId: string, amount: number, currencyCode
   }
 };
 
-export const transferFunds = async (userId: string, toIdentifier: string, amount: number, currencyCode: string) => {
+export const transferFunds = async (userId: string, toIdentifier: string, amount: number, currencyCode: string, userDescription?: string) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -164,14 +188,15 @@ export const transferFunds = async (userId: string, toIdentifier: string, amount
     );
 
     const txId = randomUUID();
+    const finalDescription = userDescription || `Transferencia a ${toIdentifier}`;
     await client.query(
-      `INSERT INTO transactions (id, type, status, from_wallet_id, to_wallet_id, from_currency, to_currency, from_amount, to_amount)
-       VALUES ($1, 'transfer', 'completed', $2, $3, $4, $4, $5, $5)`,
-      [txId, fromWalletId, toWalletId, currencyCode, amount]
+      `INSERT INTO transactions (id, type, status, from_wallet_id, to_wallet_id, from_currency, to_currency, from_amount, to_amount, description)
+       VALUES ($1, 'transfer', 'completed', $2, $3, $4, $4, $5, $5, $6)`,
+      [txId, fromWalletId, toWalletId, currencyCode, amount, finalDescription]
     );
 
     await client.query('COMMIT');
-    return { transactionId: txId, to: toIdentifier, amount };
+    return await getTransactionById(txId, client);
   } catch (error) {
     await client.query('ROLLBACK');
     throw error;
@@ -189,13 +214,18 @@ export const getTransactionHistory = async (userId: string, page: number, limit:
 
   const historyRes = await query<Transaction & { direction: 'sent' | 'received' }>(
     `SELECT 
-      t.id, t.type, t.status, t.from_currency, t.to_currency, 
-      t.from_amount, t.to_amount, t.exchange_rate, t.created_at,
+      t.*, 
+      u_from.name as from_name, w_from.alias as from_alias, w_from.cbu as from_cbu,
+      u_to.name as to_name, w_to.alias as to_alias, w_to.cbu as to_cbu,
       CASE 
         WHEN t.from_wallet_id = $1 THEN 'sent'
         WHEN t.to_wallet_id = $1 THEN 'received'
       END as direction
      FROM transactions t
+     LEFT JOIN wallets w_from ON t.from_wallet_id = w_from.id
+     LEFT JOIN users u_from ON w_from.user_id = u_from.id
+     LEFT JOIN wallets w_to ON t.to_wallet_id = w_to.id
+     LEFT JOIN users u_to ON w_to.user_id = u_to.id
      WHERE t.from_wallet_id = $1 OR t.to_wallet_id = $1
      ORDER BY t.created_at DESC
      LIMIT $2 OFFSET $3`,
