@@ -6,12 +6,12 @@ process.env.JWT_SECRET = 'a_very_long_and_secure_secret_for_testing_32_chars';
 process.env.DATABASE_URL = 'postgresql://localhost:5432/mock';
 
 import request from 'supertest';
-import app from '../app';
-import { syncExchangeRates } from '../services/exchange.service';
-import * as db from '../db';
+import app from '../../app';
+import { syncExchangeRates } from '../../services/exchange.service';
+import * as db from '../../db';
 
 // Mock del pool de base de datos
-vi.mock('../db', () => {
+vi.mock('../../db', () => {
   const mPool = {
     connect: vi.fn(() => ({
       query: vi.fn(),
@@ -26,7 +26,7 @@ vi.mock('../db', () => {
 });
 
 // Mock de autenticación
-vi.mock('../middlewares/auth.middleware', () => ({
+vi.mock('../../middlewares/auth.middleware', () => ({
   requireAuth: (req: any, _res: any, next: any) => {
     req.user = { id: 'user-123', email: 'test@latampay.com', role: 'user' };
     next();
@@ -72,7 +72,9 @@ describe('Servicio de Intercambio (Exchange & Swaps)', () => {
           .mockResolvedValueOnce({ rows: [] }) // UPDATE from balance
           .mockResolvedValueOnce({ rows: [] }) // INSERT/UPDATE to balance
           .mockResolvedValueOnce({ rows: [] }) // INSERT transaction
-          .mockResolvedValueOnce({ rows: [] }), // COMMIT
+          .mockResolvedValueOnce({ rows: [] }) // COMMIT
+          .mockResolvedValueOnce({ rows: [{ email: 'test@test.com', name: 'Test' }] }) // SELECT user email
+          .mockResolvedValueOnce({ rows: [{ id: 'tx-123', type: 'swap', from_amount: 100, to_amount: 500 }] }), // getTransactionById
         release: vi.fn(),
       };
       (db.default.connect as any).mockResolvedValueOnce(mClient);
@@ -82,7 +84,7 @@ describe('Servicio de Intercambio (Exchange & Swaps)', () => {
         .send({ from_currency: 'ARS', to_currency: 'COP', amount: 100 });
 
       expect(response.status).toBe(200);
-      expect(response.body.data.toAmount).toBe(500);
+      expect(response.body.data.to_amount).toBe(500);
     });
 
     it('debería fallar si el saldo es insuficiente', async () => {

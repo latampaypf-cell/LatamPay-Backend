@@ -18,7 +18,8 @@ API REST robusta para **LatamPay**, una plataforma de pagos y transferencias dis
 *   **Validación de Datos:** Zod (Middleware de validación centralizado)
 *   **Documentación:** Swagger (OpenAPI 3.0) con componentes reutilizables
 *   **Asistente IA:** Google Gemini (Respuestas personalizadas y públicas)
-*   **Testing:** Vitest 3+ & Supertest (34 tests de integración pasando)
+*   **Emailing:** AWS SES (Amazon Simple Email Service) con soporte para modo Mock
+*   **Testing:** Vitest 3+ & Supertest (51 tests de integración pasando)
 *   **Tareas Programadas:** node-cron (Sincronización horaria de divisas)
 *   **Logs & Tooling:** ts-node-dev, dotenv, CORS modularizado
 
@@ -29,8 +30,10 @@ El proyecto sigue una arquitectura de capas modularizada para garantizar el desa
 *   **`src/routes`**: Definición de endpoints con validación automática mediante middleware genérico.
 *   **`src/controllers`**: Orquestación de peticiones y respuestas (Thin Controllers).
 *   **`src/services`**: Lógica de negocio pura dividida por dominios (SRP):
-    *   `transaction.service.ts`: Depósitos, retiros, transferencias e historial (con enriquecimiento de datos del emisor/receptor).
-    *   `exchange.service.ts`: Sincronización de tasas y swaps de divisas.
+    *   `transaction.service.ts`: Depósitos, retiros, transferencias e historial (con enriquecimiento de datos del emisor/receptor y notificaciones por email).
+    *   `exchange.service.ts`: Sincronización de tasas, swaps de divisas y avisos por correo.
+    *   `auth.service.ts`: Gestión de usuarios, login, registro y actualización de perfil unificado.
+    *   `email.service.ts`: Proveedor de correos modular (SES/Mock).
     *   `wallet.service.ts`: Gestión de cuentas, búsqueda y contactos.
     *   `public-support.service.ts` y `user-support.service.ts`: Asistencia inteligente con IA para visitantes y usuarios registrados.
 *   **`src/middlewares`**: Seguridad (Auth), validación (Zod) y gestión global de errores.
@@ -162,10 +165,12 @@ erDiagram
 *   **Transacciones Atómicas**: Registro de usuarios y operaciones financieras envueltos en transacciones SQL (**BEGIN/COMMIT**) para garantizar la integridad.
 *   **Historial de Transacciones Enriquecido**: Para mayor claridad y trazabilidad, el historial de transferencias ahora incluye datos clave del emisor y receptor (nombre completo, alias y CBU).
 *   **Sincronización de Divisas (API Externa)**: El sistema consume la API de [ExchangeRate-API](https://www.exchangerate-api.com/) para obtener tasas en tiempo real. Un **Cron Job** automatizado actualiza estos valores cada hora, permitiendo realizar conversiones (Swaps) precisas entre ARS, COP y VES.
-*   **Asistente de Soporte con IA (Gemini)**: Se integra un chatbot inteligente para mejorar la experiencia del usuario, con dos modos de operación:
-    *   **Chat Público**: Responde preguntas generales sobre el funcionamiento de LatamPay a visitantes no registrados, basado en un prompt con información clave del negocio.
-    *   **Chat Privado**: Ofrece asistencia personalizada a usuarios autenticados, accediendo a su información de cuenta (nombre, alias, saldos) para dar respuestas precisas y contextuales sobre sus finanzas, sin poder realizar operaciones.
-*   **Seguridad**: Hasheo de contraseñas con **Bcrypt.js** y protección de rutas mediante **JWT**.
+*   **Notificaciones Automáticas (Email)**: Sistema de avisos integrado para eventos críticos:
+    *   **Bienvenida**: Al registrarse.
+    *   **Seguridad**: Al actualizar la contraseña del perfil.
+    *   **Transacciones**: Confirmación de depósitos, alertas de retiros, comprobantes de envío y avisos de recepción de dinero.
+    *   **Conversiones**: Resumen detallado de intercambios de divisa (Swaps).
+*   **Seguridad**: Hasheo de contraseñas con **Bcrypt.js**, protección de rutas mediante **JWT** y sistema de limitación de tasa (Rate Limit) para el chatbot.
 
 ## 🚀 Instalación y Configuración
 
@@ -188,6 +193,11 @@ erDiagram
     EXCHANGE_RATE_API_KEY=tu_api_key_de_exchangerate_api
     GEMINI_API_KEY=tu_gemini_api_key_aqui
     MOCK_BOT=true
+    AWS_REGION=us-east-1
+    AWS_ACCESS_KEY_ID=tu_aws_key
+    AWS_SECRET_ACCESS_KEY=tu_aws_secret
+    AWS_SES_FROM_EMAIL=tu_email_verificado@ejemplo.com
+    ENABLE_EMAIL_MOCK=true
     ```
 
 3.  **Preparar Base de Datos:**
@@ -229,24 +239,24 @@ erDiagram
 ## 🔐 API Endpoints
 
 La documentación interactiva completa está disponible en: 👉 **`http://localhost:3000/api-docs`**
---- | :--- | :--- | :--- |
+
+| Método | Ruta | Acceso | Descripción |
+| :--- | :--- | :--- | :--- |
 | `GET` | `/` | Público | Verificación del estado del servidor. |
 | `POST` | `/api/auth/register` | Público | Registro de usuario y billetera. |
 | `POST` | `/api/auth/login` | Público | Login y obtención de JWT. |
-| `POST` | `/api/support/public` | Público | Chat de ayuda para visitantes. |
-| `POST` | `/api/support/user` | Privado | Chat de ayuda para usuarios logueados
-| `GET` | `/` | Público | Verificación del estado del servidor. |
-| `POST` | `/api/auth/register` | Público | Registro de usuario y billetera. |
-| `POST` | `/api/auth/login` | Público | Login y obtención de JWT. |
-| `GET` | `/api/auth/me` | Privado | Datos del perfil del usuario. |
+| `GET` | `/api/auth/me` | Privado | Verificación rápida de sesión. |
+| `PATCH` | `/api/auth/profile` | Privado | Actualizar perfil (Nombre, Alias, Pass). |
+| `POST` | `/api/support/info` | Público | Chat de ayuda para visitantes. |
+| `POST` | `/api/support/chat` | Privado | Chat de ayuda con datos del usuario. |
 | `GET` | `/api/exchange/rates` | Público | Ver tasas (ARS, COP, VES). |
 | `POST` | `/api/exchange/swap` | Privado | Cambiar de moneda (ej: ARS a COP). |
 | `POST` | `/api/exchange/sync` | Admin | Forzar actualización de tasas. |
 | `GET` | `/api/wallets/me` | Privado | Ver CBU, Alias y saldos. |
 | `GET` | `/api/wallets/lookup/:id` | Privado | Buscar destinatario por CBU o Alias. |
 | `GET` | `/api/wallets/contacts` | Privado | Ver contactos frecuentes (ya transferidos). |
-| `POST` | `/api/transactions/deposit` | Privado | Cargar fondos a la billetera (Simulado). |
-| `POST` | `/api/transactions/withdraw` | Privado | Retirar fondos de la billetera (Simulado). |
+| `POST` | `/api/transactions/deposit` | Privado | Cargar fondos a la billetera. |
+| `POST` | `/api/transactions/withdraw` | Privado | Retirar fondos de la billetera. |
 | `POST` | `/api/transactions/transfer` | Privado | Enviar dinero a otro usuario. |
 | `GET` | `/api/transactions/history` | Privado | Historial de transacciones paginado. |
 
@@ -257,20 +267,63 @@ La documentación interactiva completa está disponible en: 👉 **`http://local
 
 ---
 
+## 🤖 Funcionamiento del Chatbot (IA)
+
+El asistente virtual utiliza Google Gemini y opera en dos modalidades para asistir al usuario:
+
+*   **Chat Público (`/api/support/info`)**:
+    *   **Uso**: Ideal para la Landing Page o antes del Login.
+    *   **Contexto**: Solo tiene información general sobre LatamPay (qué monedas acepta, cómo registrarse, etc.).
+    *   **Historial**: El Frontend puede enviar un array `history` para que la IA recuerde los mensajes anteriores de la sesión actual.
+*   **Chat Privado (`/api/support/chat`)**:
+    *   **Uso**: Dentro del Dashboard del usuario.
+    *   **Contexto**: La IA recibe automáticamente el **Nombre, Alias, CBU y Saldos Reales** del usuario.
+    *   **Capacidad**: Puede responder preguntas como "¿Cuál es mi CBU?", "¿Cuánto tengo en pesos argentinos?" o "¿Cómo puedo transferir?".
+    *   **Seguridad**: La IA tiene prohibido realizar transacciones; solo informa.
+
+---
+
+## 📧 Eventos de Correo Electrónico
+
+El backend dispara correos automáticos (vía AWS SES) en los siguientes eventos. El Frontend no necesita llamar a ningún endpoint extra para enviarlos:
+
+| Evento | Destinatario | Contenido del Correo |
+| :--- | :--- | :--- |
+| **Registro** | Usuario nuevo | Bienvenida a la plataforma y confirmación de creación de billetera. |
+| **Seguridad** | Usuario logueado | Aviso inmediato cuando se cambia la contraseña desde el perfil. |
+| **Depósito** | Dueño de la cuenta | Confirmación de que los fondos se han acreditado exitosamente. |
+| **Retiro** | Dueño de la cuenta | Alerta de seguridad informando que se ha extraído dinero. |
+| **Intercambio (Swap)** | Dueño de la cuenta | Resumen de la conversión realizada (ej. ARS a COP) con la tasa aplicada. |
+| **Transferencia (Envío)** | Emisor | Comprobante digital de la transferencia con los datos del destino. |
+| **Transferencia (Recepción)** | Receptor | Notificación de "Dinero Recibido" con el nombre de quién lo envió. |
+
+---
+
+## 🎨 Personalización de Correos (Diseño)
+
+El diseño de todos los correos electrónicos está centralizado para facilitar cambios de marca o estilo por parte del equipo de Frontend o Diseño.
+
+*   **Archivo Maestro**: `src/utils/email-templates.ts`
+*   **Layout Base**: Existe una función `baseLayout` que define el encabezado, pie de página, tipografía y colores globales. Cambiar el color aquí afectará a todos los correos.
+*   **Variables Dinámicas**: Al editar el HTML, se deben respetar los nombres de las variables inyectadas (ej: `${name}`, `${amount}`, `${currency}`) para que la información real de la base de datos siga apareciendo.
+*   **Previsualización**: Si el backend tiene `ENABLE_EMAIL_MOCK=true`, el HTML resultante se imprimirá en la terminal cada vez que se dispare un evento. Se puede copiar ese código a un archivo `.html` para verlo en el navegador.
+
+---
+
 ## ✅ Funcionalidades Implementadas
-*   [x] Autenticación JWT y Registro con creación automática de billetera.
-*   [x] Billetera multidivisa (ARS, COP, VES).
-*   [x] **Asistente de IA (Gemini)** con chat público y privado.
-*   [x] Historial de transacciones con **datos enriquecidos** (nombre, alias y CBU del destinatario).
-*   [x] Depósitos y **Retiros** de fondos con transacciones atómicas.
-*   [x] Cambio de divisas (Swap) con tasas reales sincronizadas.
-*   [x] Transferencias entre usuarios por CBU o Alias.
-*   [x] **Buscador de destinatarios** y Agenda de contactos frecuentes.
-*   [x] **Historial de transacciones** con paginación y dirección (sent/received).
-*   [x] Tarea programada (Cron Job) para actualización de divisas.
-*   [x] **Modularización basada en SOLID** y Clean Architecture.
-*   [x] Cobertura de tests modularizada (**34 tests exitosos**).
-*   [x] Sistema 100% **Type-Safe** (Eliminación de `any` y tipado estricto en servicios/DB).
+*   [x] **Autenticación y Perfil**: JWT, Registro automático de billetera y edición de perfil (Nombre/Alias).
+*   [x] **Billetera Multidivisa**: Gestión de balances independientes en ARS, COP y VES.
+*   [x] **Notificaciones por Email**: Sistema automático vía AWS SES para transacciones, bienvenida y seguridad.
+*   [x] **Asistente de IA (Gemini)**: Chat inteligente público y privado con contexto de usuario.
+*   [x] **Transacciones Atómicas**: Depósitos, Retiros y Transferencias con garantía de integridad SQL.
+*   [x] **Enriquecimiento de Datos**: Historial con nombres y CBUs de contrapartes para máxima claridad.
+*   [x] **Intercambio de Divisas (Swap)**: Conversiones instantáneas con tasas reales sincronizadas.
+*   [x] **Buscador y Agenda**: Validación de destinatarios en tiempo real y lista de contactos recientes.
+*   [x] **Historial Avanzado**: Movimientos paginados con indicador de dirección (sent/received).
+*   [x] **Automatización**: Cron Job horario para la actualización de tasas de cambio.
+*   [x] **Arquitectura Profesional**: Modularización basada en SOLID y Clean Architecture.
+*   [x] **Calidad de Código**: Cobertura de tests modularizada (**51 tests exitosos**).
+*   [x] **Seguridad**: Rate Limiting para bots, hasheo de passwords y sistema Type-Safe completo.
 
 
 ## 🔒 Seguridad e Integridad
@@ -324,3 +377,8 @@ LatamPay-Backend/
 | `EXCHANGE_RATE_API_KEY` | Clave API de ExchangeRate | `tu_api_key_aqui` |
 | `GEMINI_API_KEY` | Clave API de Google Gemini | `tu_gemini_api_key_aqui` |
 | `MOCK_BOT` | Activa respuestas de prueba del bot | `true` / `false` |
+| `AWS_REGION` | Región de AWS para SES | `us-east-1` |
+| `AWS_ACCESS_KEY_ID` | Access Key de AWS | `tu_access_key` |
+| `AWS_SECRET_ACCESS_KEY` | Secret Key de AWS | `tu_secret_key` |
+| `AWS_SES_FROM_EMAIL` | Email origen verificado en SES | `noreply@tusitio.com` |
+| `ENABLE_EMAIL_MOCK` | Simular envío de correos en consola | `true` / `false` |

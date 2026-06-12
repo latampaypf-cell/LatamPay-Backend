@@ -11,3 +11,9 @@ export interface User {
   role: 'user' | 'admin';
   created_at?: Date;
 }
+
+export interface UserProfile extends User {
+  alias?: string;
+  cbu?: string;
+}
+

@@ -6,11 +6,11 @@ process.env.JWT_SECRET = 'a_very_long_and_secure_secret_for_testing_32_chars';
 process.env.DATABASE_URL = 'postgresql://localhost:5432/mock';
 
 import request from 'supertest';
-import app from '../app';
-import * as db from '../db';
+import app from '../../app';
+import * as db from '../../db';
 
 // Mockeamos el pool de la base de datos
-vi.mock('../db', () => {
+vi.mock('../../db', () => {
   const mPool = {
     connect: vi.fn(() => ({
       query: vi.fn(),
@@ -25,7 +25,7 @@ vi.mock('../db', () => {
 });
 
 // Mockeamos el middleware de autenticación para que siempre deje pasar
-vi.mock('../middlewares/auth.middleware', () => ({
+vi.mock('../../middlewares/auth.middleware', () => ({
   requireAuth: (req: any, _res: any, next: any) => {
     req.user = { id: 'user-123', email: 'test@latampay.com', role: 'user' };
     next();

@@ -49,6 +49,9 @@ const botLimiter = rateLimit({
  *     responses:
  *       200:
  *         description: Respuesta del bot exitosa
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/SupportResponse' }
  */
 router.post('/info', botLimiter, validate(publicChatSchema), handlePublicChat);
 
@@ -82,6 +85,9 @@ router.post('/info', botLimiter, validate(publicChatSchema), handlePublicChat);
  *     responses:
  *       200:
  *         description: Respuesta personalizada del bot
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/SupportResponse' }
  */
 router.post('/chat', requireAuth, botLimiter, validate(publicChatSchema), handleUserChat);
 

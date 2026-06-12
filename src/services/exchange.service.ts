@@ -2,6 +2,8 @@ import { randomUUID } from 'crypto';
 import pool from '../db';
 import config from '../config';
 import { AppError } from '../utils/AppError';
+import { sendEmail } from './email.service';
+import { getSwapTemplate } from '../utils/email-templates';
 
 interface ExchangeRateResponse {
   result: string;
@@ -137,11 +139,19 @@ export const swapCurrency = async (userId: string, fromCurrency: string, toCurre
 
     await client.query('COMMIT');
     
-    // Importamos dinámicamente para evitar dependencia circular si fuera necesario, 
-    // pero como ya tenemos la lógica de SELECT en transaction service, 
-    // lo ideal es que swap también devuelva el objeto rico.
-    const { getTransactionById } = require('./transaction.service');
-    return await getTransactionById(txId);
+    // Enviar correo de notificación de intercambio (Swap)
+    const userRes = await client.query('SELECT email, name FROM users WHERE id = $1', [userId]);
+    const user = userRes.rows[0];
+    if (user) {
+      sendEmail({
+        to: user.email,
+        ...getSwapTemplate(user.name, amount, fromCurrency, toAmount, toCurrency)
+      }).catch(err => console.error('Error enviando correo de swap:', err));
+    }
+
+    // Importamos dinámicamente para evitar dependencia circular
+    const { getTransactionById } = await import('./transaction.service');
+    return await getTransactionById(txId, client);
   } catch (error) {
     await client.query('ROLLBACK');
     throw error;

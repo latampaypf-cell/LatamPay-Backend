@@ -1,12 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import request from 'supertest';
 import jwt from 'jsonwebtoken';
-import app from '../app';
-import * as db from '../db';
-import { config } from '../config';
+import app from '../../app';
+import * as db from '../../db';
+import { config } from '../../config';
 
 // Mock de base de datos
-vi.mock('../db', () => {
+vi.mock('../../db', () => {
   const mPool = {
     connect: vi.fn(() => ({
       query: vi.fn(),
@@ -20,7 +20,7 @@ vi.mock('../db', () => {
   };
 });
 
-describe('Transaction Enrichment Integration Tests', () => {
+describe('Pruebas de Enriquecimiento de Transacciones', () => {
   const mockUserId = 'user-123';
   const mockToken = jwt.sign({ id: mockUserId, email: 'test@test.com', role: 'user' }, config.jwtSecret);
 
@@ -40,6 +40,10 @@ describe('Transaction Enrichment Integration Tests', () => {
           .mockResolvedValueOnce({ rows: [] }) // UPDATE/INSERT to balance
           .mockResolvedValueOnce({ rows: [] }) // INSERT transaction
           .mockResolvedValueOnce({ rows: [] }) // COMMIT
+          .mockResolvedValueOnce({ rows: [
+            { email: 'from@test.com', name: 'Facundo Origen', wallet_id: 'wallet-from-123' },
+            { email: 'to@test.com', name: 'Juan Destino', wallet_id: 'wallet-to-456' }
+          ] }) // SELECT user emails
           // Mock de getTransactionById (La consulta enriquecida)
           .mockResolvedValueOnce({ 
             rows: [{ 
