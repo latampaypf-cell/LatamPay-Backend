@@ -5,6 +5,8 @@ import { AppError } from '../utils/AppError';
 
 import { generateAlias, generateCBU } from '../utils/generators';
 import { Transaction } from '../types/transaction.types';
+import { sendEmail } from './email.service';
+import { getDepositTemplate, getWithdrawTemplate, getTransferSentTemplate, getTransferReceivedTemplate } from '../utils/email-templates';
 
 /**
  * Devuelve el wallet_id del usuario. Si el usuario no tiene wallet,
@@ -102,6 +104,16 @@ export const depositFunds = async (userId: string, amount: number, currencyCode:
 
     await client.query('COMMIT');
     
+    // Enviar correo de confirmación de depósito
+    const userRes = await client.query('SELECT email, name FROM users WHERE id = $1', [userId]);
+    const user = userRes.rows[0];
+    if (user) {
+      sendEmail({
+        to: user.email,
+        ...getDepositTemplate(user.name, amount, currencyCode)
+      }).catch(err => console.error('Error enviando correo de depósito:', err));
+    }
+
     // Devolvemos el objeto enriquecido usando el mismo cliente de la conexión
     return await getTransactionById(txId, client);
   } catch (error) {
@@ -142,6 +154,17 @@ export const withdrawFunds = async (userId: string, amount: number, currencyCode
     );
 
     await client.query('COMMIT');
+
+    // Enviar correo de notificación de retiro (Seguridad)
+    const userRes = await client.query('SELECT email, name FROM users WHERE id = $1', [userId]);
+    const user = userRes.rows[0];
+    if (user) {
+      sendEmail({
+        to: user.email,
+        ...getWithdrawTemplate(user.name, amount, currencyCode)
+      }).catch(err => console.error('Error enviando correo de retiro:', err));
+    }
+
     return await getTransactionById(txId, client);
   } catch (error) {
     await client.query('ROLLBACK');
@@ -196,6 +219,33 @@ export const transferFunds = async (userId: string, toIdentifier: string, amount
     );
 
     await client.query('COMMIT');
+
+    // Enviar correos de notificación de transferencia
+    const usersRes = await client.query(`
+      SELECT u.id, u.email, u.name, w.id as wallet_id 
+      FROM users u 
+      JOIN wallets w ON u.id = w.user_id 
+      WHERE w.id IN ($1, $2)`, 
+      [fromWalletId, toWalletId]
+    );
+
+    const fromUser = usersRes.rows.find(u => u.wallet_id === fromWalletId);
+    const toUser = usersRes.rows.find(u => u.wallet_id === toWalletId);
+
+    if (fromUser) {
+      sendEmail({
+        to: fromUser.email,
+        ...getTransferSentTemplate(fromUser.name, amount, currencyCode, toUser?.name || toIdentifier)
+      }).catch(err => console.error('Error enviando correo al emisor:', err));
+    }
+
+    if (toUser) {
+      sendEmail({
+        to: toUser.email,
+        ...getTransferReceivedTemplate(toUser.name, amount, currencyCode, fromUser?.name || 'un usuario')
+      }).catch(err => console.error('Error enviando correo al receptor:', err));
+    }
+
     return await getTransactionById(txId, client);
   } catch (error) {
     await client.query('ROLLBACK');

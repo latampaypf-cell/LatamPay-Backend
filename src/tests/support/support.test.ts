@@ -1,25 +1,25 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import request from 'supertest';
 import jwt from 'jsonwebtoken';
-import app from '../app';
-import { PublicSupportService } from '../services/public-support.service';
-import { UserSupportService } from '../services/user-support.service';
-import { config } from '../config';
+import app from '../../app';
+import { PublicSupportService } from '../../services/public-support.service';
+import { UserSupportService } from '../../services/user-support.service';
+import { config } from '../../config';
 
 // Mockeamos los servicios de soporte
-vi.mock('../services/public-support.service', () => ({
+vi.mock('../../services/public-support.service', () => ({
   PublicSupportService: {
     getInformationalReply: vi.fn(),
   },
 }));
 
-vi.mock('../services/user-support.service', () => ({
+vi.mock('../../services/user-support.service', () => ({
   UserSupportService: {
     getPersonalizedReply: vi.fn(),
   },
 }));
 
-describe('Support Integration Tests', () => {
+describe('Pruebas de Integración de Soporte', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
