@@ -15,6 +15,11 @@ const envSchema = z.object({
   EXCHANGE_RATE_API_KEY: z.string().min(1, 'Falta la API Key de ExchangeRate-API.'),
   GEMINI_API_KEY: z.string().min(1, 'Falta la API Key de Google Gemini.'),
   MOCK_BOT: z.string().optional().transform(val => val === 'true'),
+  AWS_REGION: z.string().default('us-east-1'),
+  AWS_ACCESS_KEY_ID: z.string().optional(),
+  AWS_SECRET_ACCESS_KEY: z.string().optional(),
+  AWS_SES_FROM_EMAIL: z.string().email().optional(),
+  ENABLE_EMAIL_MOCK: z.string().optional().transform(val => val !== 'false'), // Default true if not specified as 'false'
 });
 
 const parsed = envSchema.safeParse(process.env);
@@ -38,6 +43,13 @@ export const config = {
   exchangeRateApiKey: parsed.data?.EXCHANGE_RATE_API_KEY ?? 'mock_key',
   geminiApiKey: parsed.data?.GEMINI_API_KEY ?? '',
   mockBot:      parsed.data?.MOCK_BOT ?? false,
+  aws: {
+    region: parsed.data?.AWS_REGION ?? 'us-east-1',
+    accessKeyId: parsed.data?.AWS_ACCESS_KEY_ID,
+    secretAccessKey: parsed.data?.AWS_SECRET_ACCESS_KEY,
+    fromEmail: parsed.data?.AWS_SES_FROM_EMAIL,
+  },
+  enableEmailMock: parsed.data?.ENABLE_EMAIL_MOCK ?? true,
 } as const;
 
 export default config;

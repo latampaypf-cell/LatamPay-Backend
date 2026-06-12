@@ -1,9 +1,10 @@
 import { Router, Request, Response } from 'express';
 import { login } from '../controllers/login.controller';
 import { register } from '../controllers/register.controller';
+import { update } from '../controllers/user.controller';
 import { requireAuth } from '../middlewares/auth.middleware';
 import { validate } from '../middlewares/validate.middleware';
-import { loginSchema, registerSchema } from '../schemas/auth.schema';
+import { loginSchema, registerSchema, updateProfileSchema } from '../schemas/auth.schema';
 
 const router = Router();
 
@@ -95,6 +96,50 @@ router.post('/login', validate(loginSchema), login);
  *             schema: { $ref: '#/components/schemas/Error' }
  */
 router.post('/register', validate(registerSchema), register);
+
+/**
+ * @swagger
+ * /api/auth/profile:
+ *   patch:
+ *     summary: Actualizar perfil del usuario
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: Juan Perez Modificado
+ *               alias:
+ *                 type: string
+ *                 example: juan.perez.2026
+ *               currentPassword:
+ *                 type: string
+ *                 example: Password123
+ *               newPassword:
+ *                 type: string
+ *                 example: NewPassword123
+ *     responses:
+ *       200:
+ *         description: Perfil actualizado exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status: { type: string, example: success }
+ *                 data: { $ref: '#/components/schemas/User' }
+ *       401:
+ *         description: No autorizado o contraseña incorrecta
+ *       400:
+ *         description: Error en los datos proporcionados
+ */
+router.patch('/profile', requireAuth, validate(updateProfileSchema), update);
 
 /**
  * @swagger

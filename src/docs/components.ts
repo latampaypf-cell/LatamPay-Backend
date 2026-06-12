@@ -21,13 +21,15 @@ export const swaggerComponents = {
         name: { type: 'string' },
         email: { type: 'string', format: 'email' },
         role: { type: 'string', enum: ['user', 'admin'] },
+        alias: { type: 'string', example: 'mi.alias.pago', nullable: true },
+        cbu: { type: 'string', example: '1234567890123456789012', nullable: true },
         created_at: { type: 'string', format: 'date-time' },
       },
     },
     Balance: {
       type: 'object',
       properties: {
-        currency: { type: 'string', example: 'ARS' },
+        currency_code: { type: 'string', example: 'ARS' },
         amount: { type: 'number', example: 1250.50 },
       },
     },
@@ -40,6 +42,37 @@ export const swaggerComponents = {
         balances: {
           type: 'array',
           items: { $ref: '#/components/schemas/Balance' },
+        },
+      },
+    },
+    ExchangeRate: {
+      type: 'object',
+      properties: {
+        from_currency: { type: 'string', example: 'ARS' },
+        to_currency: { type: 'string', example: 'COP' },
+        rate: { type: 'number', example: 5.25 },
+        updated_at: { type: 'string', format: 'date-time' },
+      },
+    },
+    SupportResponse: {
+      type: 'object',
+      properties: {
+        status: { type: 'string', example: 'success' },
+        data: {
+          type: 'object',
+          properties: {
+            reply: { type: 'string', example: 'Hola, ¿en qué puedo ayudarte?' },
+            updatedHistory: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  role: { type: 'string', enum: ['user', 'model'] },
+                  text: { type: 'string' },
+                },
+              },
+            },
+          },
         },
       },
     },

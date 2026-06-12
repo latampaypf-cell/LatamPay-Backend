@@ -24,13 +24,7 @@ const router = Router();
  *                 status: { type: string, example: success }
  *                 data:
  *                   type: array
- *                   items:
- *                     type: object
- *                     properties:
- *                       from_currency: { type: string, example: ARS }
- *                       to_currency: { type: string, example: COP }
- *                       rate: { type: number, example: 0.0035 }
- *                       updated_at: { type: string, format: date-time }
+ *                   items: { $ref: '#/components/schemas/ExchangeRate' }
  */
 router.get('/rates', getRates);
 
