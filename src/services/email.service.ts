@@ -14,8 +14,10 @@ export interface EmailProvider {
 
 class SESEmailProvider implements EmailProvider {
   private client: SESClient;
+  private fromEmail: string;
 
-  constructor() {
+  constructor(fromEmail: string) {
+    this.fromEmail = fromEmail;
     this.client = new SESClient({
       region: config.aws.region,
       credentials: {
@@ -39,20 +41,28 @@ class SESEmailProvider implements EmailProvider {
         },
         Subject: { Data: subject },
       },
-      Source: config.aws.fromEmail,
+      Source: this.fromEmail,
     });
 
     try {
       await this.client.send(command);
-      console.log(`📧 Email sent to ${to} via AWS SES`);
+      console.log(`📧 Email enviado a ${to} vía AWS SES`);
     } catch (error: any) {
-      // Check if it's a Sandbox verification error
-      if (error.name === 'MessageRejected' && error.message.includes('Address blacklisted') || error.message.includes('not verified')) {
-        console.warn(`⚠️ AWS SES Sandbox: Recipient ${to} is not verified. Falling back to mock log.`);
+      const message: string = error?.message ?? '';
+      const isSandboxRejection =
+        error?.name === 'MessageRejected' &&
+        (message.includes('not verified') ||
+          message.includes('Address blacklisted'));
+
+      if (isSandboxRejection) {
+        console.warn(
+          `⚠️ SES sandbox: destinatario ${to} no verificado. Fallback a log.`,
+        );
         this.mockLog(options);
         return;
       }
-      console.error('❌ Error sending email via SES:', error);
+
+      console.error('❌ Error enviando email vía SES:', error);
       throw error;
     }
   }
@@ -76,10 +86,37 @@ class MockEmailProvider implements EmailProvider {
   }
 }
 
-// Factory logic
-const provider: EmailProvider = (config.enableEmailMock || !config.aws.accessKeyId)
-  ? new MockEmailProvider()
-  : new SESEmailProvider();
+const buildProvider = (): EmailProvider => {
+  const { accessKeyId, secretAccessKey, fromEmail } = config.aws;
+
+  if (config.enableEmailMock) {
+    if (config.nodeEnv !== 'test') {
+      console.log('✉️  Email provider: MOCK (ENABLE_EMAIL_MOCK=true)');
+    }
+    return new MockEmailProvider();
+  }
+
+  if (!accessKeyId || !secretAccessKey) {
+    console.warn(
+      '⚠️  AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY no definidos. Fallback a MOCK.',
+    );
+    return new MockEmailProvider();
+  }
+
+  if (!fromEmail) {
+    console.warn(
+      '⚠️  AWS_SES_FROM_EMAIL no definido. Fallback a MOCK. (Tiene que ser una dirección verificada en SES.)',
+    );
+    return new MockEmailProvider();
+  }
+
+  console.log(
+    `✉️  Email provider: AWS SES (region=${config.aws.region}, from=${fromEmail})`,
+  );
+  return new SESEmailProvider(fromEmail);
+};
+
+const provider: EmailProvider = buildProvider();
 
 export const sendEmail = async (options: EmailOptions) => {
   return provider.send(options);
