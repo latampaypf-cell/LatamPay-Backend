@@ -5,10 +5,25 @@
  * y facilitar el mantenimiento de la marca.
  */
 
-const APP_COLOR = '#3178c6';
+// Colores de marca LatamPay (matchean Logo.svg y el frontend)
+const BRAND_CYAN = '#22D3EE';
+const BRAND_BLUE = '#3B82F6';
+const BRAND_VIOLET = '#A855F7';
+const BRAND_DARK = '#0F172A'; // slate-950, fondo del header/footer
+
+const APP_COLOR = BRAND_BLUE;
 const SECONDARY_COLOR = '#666666';
-const SUCCESS_COLOR = '#28a745';
-const WARNING_COLOR = '#dc3545';
+const SUCCESS_COLOR = '#10B981'; // emerald-500
+const WARNING_COLOR = '#EF4444'; // red-500
+
+const LOGO_URL = 'https://latam-pay-frontend.vercel.app/apple-touch-icon.png';
+
+// CDN público de Icons8 (PNG estables, no requieren auth)
+const SOCIAL_ICONS = {
+  instagram: 'https://img.icons8.com/color/48/instagram-new.png',
+  x: 'https://img.icons8.com/color/48/twitterx--v2.png',
+  tiktok: 'https://img.icons8.com/color/48/tiktok--v1.png',
+};
 
 /**
  * Layout base que envuelve a todos los correos.
@@ -134,9 +149,6 @@ const formatDate = (date: Date) =>
     minute: '2-digit',
   });
 
-const HEADER_IMAGE_URL =
-  'https://my.stripo.email/resources/coediting/assets/previews/default-img.png';
-
 const buildTransferEmail = (opts: TransferEmailOpts) => {
   const isSent = opts.direction === 'sent';
   const title = isSent ? 'Transferencia enviada' : 'Transferencia recibida';
@@ -163,32 +175,22 @@ const buildTransferEmail = (opts: TransferEmailOpts) => {
         <tbody>
           <tr>
             <td valign="top">
-              <!-- Header -->
+              <!-- Header con logo + wordmark LatamPay -->
               <table cellspacing="0" cellpadding="0" align="center">
                 <tbody>
                   <tr>
-                    <td align="center" style="background-position: 0% top">
-                      <table width="600" cellspacing="0" cellpadding="0" bgcolor="#ffffff" align="center">
+                    <td align="center">
+                      <table width="600" cellspacing="0" cellpadding="0" bgcolor="${BRAND_DARK}" align="center">
                         <tbody>
                           <tr>
-                            <td align="left" style="padding:25px 35px 45px 35px;">
-                              <table width="100%" cellpadding="0" cellspacing="0">
-                                <tbody>
-                                  <tr>
-                                    <td align="left" width="530">
-                                      <table cellspacing="0" role="presentation" width="100%" cellpadding="0">
-                                        <tbody>
-                                          <tr>
-                                            <td align="left" style="font-size:0;">
-                                              <img src="${HEADER_IMAGE_URL}" alt="LatamPay" width="100%" height="100">
-                                            </td>
-                                          </tr>
-                                        </tbody>
-                                      </table>
-                                    </td>
-                                  </tr>
-                                </tbody>
-                              </table>
+                            <td align="center" style="padding:40px 35px;">
+                              <img src="${LOGO_URL}" alt="LatamPay" width="72" height="72" style="display:block;margin:0 auto;border-radius:16px;">
+                              <h1 style="color:#ffffff;font-size:30px;font-weight:700;margin:18px 0 6px 0;letter-spacing:1px;font-family:Inter,Arial,sans-serif;">
+                                Latam<span style="color:${BRAND_CYAN};">Pay</span>
+                              </h1>
+                              <p style="color:#94A3B8;font-size:13px;margin:0;font-family:Inter,Arial,sans-serif;">
+                                Tu billetera digital en Latinoamérica
+                              </p>
                             </td>
                           </tr>
                         </tbody>
@@ -294,23 +296,23 @@ const buildTransferEmail = (opts: TransferEmailOpts) => {
                                       <table cellpadding="0" width="100%" cellspacing="0">
                                         <tbody>
                                           <tr>
-                                            <td align="center" style="font-size:0;padding-bottom:35px;">
-                                              <table cellpadding="0" cellspacing="0">
+                                            <td align="center" style="font-size:0;padding-bottom:30px;">
+                                              <table cellpadding="0" cellspacing="0" align="center">
                                                 <tbody>
                                                   <tr>
-                                                    <td valign="top" align="center" style="padding-right:30px;">
-                                                      <a href="#" target="_blank">
-                                                        <img height="45" title="Instagram" src="https://oioftq.stripocdn.email/content/guids/CABINET_d5957dbaa6e9329676ad02814971ab4ec15a48029b5f6205ead150f98a64de66/images/instagramfill.png" alt="Ig" width="45">
+                                                    <td valign="middle" align="center" style="padding:0 14px;">
+                                                      <a href="#" target="_blank" style="text-decoration:none;">
+                                                        <img height="40" width="40" title="Instagram" alt="Instagram" src="${SOCIAL_ICONS.instagram}" style="display:block;border:0;">
                                                       </a>
                                                     </td>
-                                                    <td valign="top" align="center" style="padding-right:30px;">
-                                                      <a target="_blank" href="#">
-                                                        <img width="45" height="45" title="X" src="https://oioftq.stripocdn.email/content/guids/CABINET_d5957dbaa6e9329676ad02814971ab4ec15a48029b5f6205ead150f98a64de66/images/instagramfill1.png" alt="X">
+                                                    <td valign="middle" align="center" style="padding:0 14px;">
+                                                      <a target="_blank" href="#" style="text-decoration:none;">
+                                                        <img height="40" width="40" title="X" alt="X" src="${SOCIAL_ICONS.x}" style="display:block;border:0;">
                                                       </a>
                                                     </td>
-                                                    <td valign="top" align="center" style="padding-right:10px;">
-                                                      <a href="#" target="_blank">
-                                                        <img height="45" title="TikTok" src="https://oioftq.stripocdn.email/content/guids/CABINET_d5957dbaa6e9329676ad02814971ab4ec15a48029b5f6205ead150f98a64de66/images/instagramfill2.png" alt="Tt" width="45">
+                                                    <td valign="middle" align="center" style="padding:0 14px;">
+                                                      <a href="#" target="_blank" style="text-decoration:none;">
+                                                        <img height="40" width="40" title="TikTok" alt="TikTok" src="${SOCIAL_ICONS.tiktok}" style="display:block;border:0;">
                                                       </a>
                                                     </td>
                                                   </tr>
