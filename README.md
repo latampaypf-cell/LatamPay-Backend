@@ -52,8 +52,14 @@ La base de datos está diseñada para manejar múltiples divisas y transacciones
 2.  **`wallets`**: Cada usuario posee una billetera única con CBU y Alias.
 3.  **`currencies`**: Soporte para ARS, COP, VES (fiat) y extensible a crypto.
 4.  **`balances`**: Saldos segregados por moneda dentro de cada billetera.
-5.  **`transactions`**: Historial de depósitos, retiros, transferencias y swaps.
+5.  **`transactions`**: Historial completo con registro de comisiones (`fee`).
 6.  **`exchange_rates`**: Tasas de cambio en tiempo real entre divisas.
+
+### 💰 Modelo de Monetización
+La plataforma implementa un margen de ganancia automático mediante comisiones:
+*   **Comisión Fija:** 3% sobre el monto de la operación.
+*   **Operaciones Sujetas a Cargo:** Retiros (`withdraw`) e Intercambios de divisa (`swap`).
+*   **Flujo de Tesorería:** Las comisiones se acreditan automáticamente en tiempo real a la billetera del **Usuario Administrador**, permitiendo un seguimiento claro de los ingresos de la plataforma por cada moneda soportada.
 
 ### Diseño y Relaciones
 
@@ -119,6 +125,7 @@ erDiagram
         VARCHAR to_currency
         NUMERIC from_amount
         NUMERIC to_amount
+        NUMERIC fee
         NUMERIC exchange_rate
         VARCHAR description
         TIMESTAMP created_at
@@ -168,8 +175,9 @@ erDiagram
 *   **Notificaciones Automáticas (Email)**: Sistema de avisos integrado para eventos críticos:
     *   **Bienvenida**: Al registrarse.
     *   **Seguridad**: Al actualizar la contraseña del perfil.
-    *   **Transacciones**: Confirmación de depósitos, alertas de retiros, comprobantes de envío y avisos de recepción de dinero.
-    *   **Conversiones**: Resumen detallado de intercambios de divisa (Swaps).
+    *   **Transacciones**: Confirmación de depósitos, alertas de retiros (con desglose de comisión del 3%), comprobantes de envío y avisos de recepción de dinero.
+    *   **Conversiones**: Resumen detallado de intercambios de divisa (Swaps) con cálculo de tasa y comisión aplicada.
+*   **Transparencia Financiera**: En todas las operaciones sujetas a cargos (Retiros y Swaps), el sistema garantiza la precisión mediante redondeo a 2 decimales y comunica el costo del servicio tanto en la respuesta de la API como en las notificaciones automáticas al usuario.
 *   **Seguridad**: Hasheo de contraseñas con **Bcrypt.js**, protección de rutas mediante **JWT** y sistema de limitación de tasa (Rate Limit) para el chatbot.
 
 ## 🚀 Instalación y Configuración

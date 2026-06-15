@@ -31,6 +31,21 @@ INSERT INTO users (id, email, password_hash, name, role, created_at) VALUES
     '2026-06-03 12:00:00'
 );
 
+-- Billetera del Administrador (Tesorería)
+INSERT INTO wallets (id, user_id, cbu, alias, created_at) VALUES
+(
+    '00000000-0000-0000-0000-000000000000',
+    '11111111-1111-1111-1111-111111111111',
+    '0000000000000000000000',
+    'latampay.admin',
+    '2026-06-03 12:00:00'
+);
+
+-- Saldos iniciales para el Admin
+INSERT INTO balances (id, wallet_id, currency_code, amount) VALUES ('00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000000', 'ARS', 0.00);
+INSERT INTO balances (id, wallet_id, currency_code, amount) VALUES ('00000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000000', 'COP', 0.00);
+INSERT INTO balances (id, wallet_id, currency_code, amount) VALUES ('00000000-0000-0000-0000-000000000003', '00000000-0000-0000-0000-000000000000', 'VES', 0.00);
+
 -- ====================================================================
 -- USUARIO CLIENTE ESTÁNDAR
 -- email: facundo@latampay.com | contraseña: Password123

@@ -112,17 +112,28 @@ export const getDepositTemplate = (name: string, amount: number, currency: strin
 /**
  * Plantilla: Retiro de Fondos
  */
-export const getWithdrawTemplate = (name: string, amount: number, currency: string) => ({
+export const getWithdrawTemplate = (name: string, amount: number, currency: string, fee: number) => ({
   subject: 'Retiro de fondos - LatamPay 💸',
-  text: `Hola ${name}, se ha realizado un retiro de ${amount} ${currency} de tu cuenta.`,
+  text: `Hola ${name}, se ha realizado un retiro de ${amount} ${currency} (Comisión: ${fee} ${currency}).`,
   html: baseLayout(`
     <h2 style="color: #333333; margin-top: 0;">Notificación de Retiro</h2>
-    <p>Hola <strong>${name}</strong>, se ha procesado una solicitud de retiro de fondos.</p>
-    <div style="background-color: #f8f9fa; border-radius: 8px; padding: 20px; text-align: center; margin: 25px 0; border: 1px solid #eeeeee;">
-      <span style="display: block; font-size: 14px; color: ${SECONDARY_COLOR};">Monto Retirado</span>
-      <span style="display: block; font-size: 32px; font-weight: bold; color: #333333;">${amount} ${currency}</span>
+    <p>Hola <strong>${name}</strong>, se ha procesado tu solicitud de retiro.</p>
+    <div style="background-color: #f8f9fa; border-radius: 8px; padding: 20px; margin: 25px 0; border: 1px solid #eeeeee;">
+      <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+        <span style="color: ${SECONDARY_COLOR};">Monto solicitado:</span>
+        <span style="font-weight: bold;">${amount} ${currency}</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+        <span style="color: ${SECONDARY_COLOR};">Comisión LatamPay (3%):</span>
+        <span style="color: ${WARNING_COLOR};">-${fee} ${currency}</span>
+      </div>
+      <hr style="border: 0; border-top: 1px solid #eeeeee; margin: 10px 0;">
+      <div style="display: flex; justify-content: space-between;">
+        <span style="color: #333333; font-weight: bold;">Total a recibir:</span>
+        <span style="font-size: 20px; font-weight: bold; color: ${SUCCESS_COLOR};">${(amount - fee).toFixed(2)} ${currency}</span>
+      </div>
     </div>
-    <p style="font-size: 14px; color: ${SECONDARY_COLOR};">Si no reconoces esta operación, bloquea tu cuenta inmediatamente desde la app.</p>
+    <p style="font-size: 14px; color: ${SECONDARY_COLOR};">Si no reconoces esta operación, bloquea tu cuenta inmediatamente.</p>
   `)
 });
 
@@ -421,21 +432,30 @@ export const getTransferReceivedTemplate = (name: string, amount: number, curren
 /**
  * Plantilla: Intercambio (Swap)
  */
-export const getSwapTemplate = (name: string, fromAmount: number, fromCurr: string, toAmount: number, toCurr: string) => ({
+export const getSwapTemplate = (name: string, fromAmount: number, fromCurr: string, toAmount: number, toCurr: string, fee: number) => ({
   subject: 'Intercambio de divisas exitoso - LatamPay 🔄',
-  text: `Has cambiado ${fromAmount} ${fromCurr} por ${toAmount} ${toCurr}.`,
+  text: `Has cambiado ${fromAmount} ${fromCurr} por ${toAmount} ${toCurr} (Comisión: ${fee} ${toCurr}).`,
   html: baseLayout(`
     <h2 style="color: #333333; margin-top: 0;">Resumen de Intercambio</h2>
     <p>Hola <strong>${name}</strong>, tu cambio de divisa se ha realizado con éxito.</p>
     <div style="background-color: #f8f9fa; border-radius: 8px; padding: 20px; margin: 25px 0; border: 1px solid #eeeeee;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+      <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
         <span style="color: ${SECONDARY_COLOR};">Entregaste:</span>
         <span style="font-weight: bold;">${fromAmount} ${fromCurr}</span>
       </div>
       <div style="text-align: center; margin: 10px 0; font-size: 20px;">⬇️</div>
-      <div style="display: flex; justify-content: space-between; align-items: center;">
-        <span style="color: ${SECONDARY_COLOR};">Recibiste:</span>
-        <span style="font-weight: bold; color: ${SUCCESS_COLOR};">${toAmount} ${toCurr}</span>
+      <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+        <span style="color: ${SECONDARY_COLOR};">Monto convertido:</span>
+        <span style="font-weight: bold;">${(toAmount + fee).toFixed(2)} ${toCurr}</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+        <span style="color: ${SECONDARY_COLOR};">Comisión (3%):</span>
+        <span style="color: ${WARNING_COLOR};">-${fee} ${toCurr}</span>
+      </div>
+      <hr style="border: 0; border-top: 1px solid #eeeeee; margin: 10px 0;">
+      <div style="display: flex; justify-content: space-between;">
+        <span style="color: #333333; font-weight: bold;">Recibiste en tu balance:</span>
+        <span style="font-size: 20px; font-weight: bold; color: ${SUCCESS_COLOR};">${toAmount} ${toCurr}</span>
       </div>
     </div>
     <p>La tasa se aplicó según el valor de mercado al momento de la operación.</p>

@@ -95,6 +95,7 @@ export const swaggerComponents = {
         to_currency: { type: 'string' },
         from_amount: { type: 'number' },
         to_amount: { type: 'number' },
+        fee: { type: 'number', example: 15.50, description: 'Comisión cobrada por la plataforma (3%)' },
         exchange_rate: { type: 'number', nullable: true },
         direction: { type: 'string', enum: ['sent', 'received'], nullable: true },
         description: { type: 'string', example: 'Pago Alquiler Junio' },
