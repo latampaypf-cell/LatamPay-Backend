@@ -11,6 +11,7 @@ export interface Transaction {
   to_currency: string;
   from_amount: number;
   to_amount: number;
+  fee?: number;
   exchange_rate?: number;
   description?: string;
   from_name?: string;

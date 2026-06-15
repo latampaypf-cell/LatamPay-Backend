@@ -5,6 +5,9 @@ import { AppError } from '../utils/AppError';
 import { sendEmail } from './email.service';
 import { getSwapTemplate } from '../utils/email-templates';
 
+const ADMIN_ID = '11111111-1111-1111-1111-111111111111';
+const COMMISSION_RATE = 0.03;
+
 interface ExchangeRateResponse {
   result: string;
   base_code: string;
@@ -113,7 +116,12 @@ export const swapCurrency = async (userId: string, fromCurrency: string, toCurre
     );
     if (rateRes.rows.length === 0) throw new AppError('Tasa de cambio no disponible.', 404);
     const rate = Number(rateRes.rows[0].rate);
-    const toAmount = amount * rate;
+    
+    const amountBeforeFee = amount * rate;
+    const fee = Number((amountBeforeFee * COMMISSION_RATE).toFixed(2));
+    const toAmount = Number((amountBeforeFee - fee).toFixed(2));
+
+    if (toAmount <= 0) throw new AppError('El monto convertido es demasiado bajo para cubrir la comisión.', 400);
 
     // 3. Ejecutar el swap (restar uno, sumar otro)
     await client.query(
@@ -129,12 +137,33 @@ export const swapCurrency = async (userId: string, fromCurrency: string, toCurre
       [randomUUID(), walletId, toCurrency, toAmount]
     );
 
+    // Acreditar comisión al Administrador (en la moneda de destino)
+    const adminRes = await client.query('SELECT id FROM wallets WHERE user_id = $1', [ADMIN_ID]);
+    let adminWalletId;
+    if (adminRes.rows.length === 0) {
+      // Si el admin no tiene wallet, la creamos (usando una lógica similar a ensureWallet pero aquí estamos en otro archivo)
+      // Para simplificar, asumimos que el admin debe tener wallet o usamos una query directa
+      // Mejor aún, podríamos importar ensureWallet si estuviera exportada, pero no lo está en transaction.service.ts
+      // Por ahora, lanzamos error si no existe o la creamos manualmente aquí
+      throw new AppError('Billetera de administración no configurada.', 500);
+    } else {
+      adminWalletId = adminRes.rows[0].id;
+    }
+
+    await client.query(
+      `INSERT INTO balances (id, wallet_id, currency_code, amount)
+       VALUES ($1, $2, $3, $4)
+       ON CONFLICT (wallet_id, currency_code)
+       DO UPDATE SET amount = balances.amount + EXCLUDED.amount`,
+      [randomUUID(), adminWalletId, toCurrency, fee]
+    );
+
     // 4. Registrar transacción
     const txId = randomUUID();
     await client.query(
-      `INSERT INTO transactions (id, type, status, from_wallet_id, to_wallet_id, from_currency, to_currency, from_amount, to_amount, exchange_rate, description)
-       VALUES ($1, 'swap', 'completed', $2, $2, $3, $4, $5, $6, $7, $8)`,
-      [txId, walletId, fromCurrency, toCurrency, amount, toAmount, rate, `Swap de ${fromCurrency} a ${toCurrency}`]
+      `INSERT INTO transactions (id, type, status, from_wallet_id, to_wallet_id, from_currency, to_currency, from_amount, to_amount, fee, exchange_rate, description)
+       VALUES ($1, 'swap', 'completed', $2, $2, $3, $4, $5, $6, $7, $8, $9)`,
+      [txId, walletId, fromCurrency, toCurrency, amount, toAmount, fee, rate, `Swap de ${fromCurrency} a ${toCurrency} (Comisión 3%)`]
     );
 
     await client.query('COMMIT');
@@ -145,7 +174,7 @@ export const swapCurrency = async (userId: string, fromCurrency: string, toCurre
     if (user) {
       sendEmail({
         to: user.email,
-        ...getSwapTemplate(user.name, amount, fromCurrency, toAmount, toCurrency)
+        ...getSwapTemplate(user.name, amount, fromCurrency, toAmount, toCurrency, fee)
       }).catch(err => console.error('Error enviando correo de swap:', err));
     }
 
