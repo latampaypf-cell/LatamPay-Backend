@@ -8,6 +8,9 @@ import { Transaction } from '../types/transaction.types';
 import { sendEmail } from './email.service';
 import { getDepositTemplate, getWithdrawTemplate, getTransferSentTemplate, getTransferReceivedTemplate } from '../utils/email-templates';
 
+const ADMIN_ID = '11111111-1111-1111-1111-111111111111';
+const COMMISSION_RATE = 0.03;
+
 /**
  * Devuelve el wallet_id del usuario. Si el usuario no tiene wallet,
  * la crea junto con los balances en cero para cada moneda fiat.
@@ -140,17 +143,32 @@ export const withdrawFunds = async (userId: string, amount: number, currencyCode
     const currentBalance = balanceRes.rows[0]?.amount || 0;
     if (Number(currentBalance) < amount) throw new AppError('Saldo insuficiente para el retiro.', 400);
 
+    const fee = Number((amount * COMMISSION_RATE).toFixed(2));
+    const toAmount = Number((amount - fee).toFixed(2));
+
+    if (toAmount <= 0) throw new AppError('El monto es demasiado bajo para cubrir la comisión.', 400);
+
     await client.query(
       'UPDATE balances SET amount = amount - $1 WHERE wallet_id = $2 AND currency_code = $3',
       [amount, walletId, currencyCode]
     );
 
-    const txId = randomUUID();
-    const finalDescription = userDescription || `Retiro de ${amount} ${currencyCode}`;
+    // Acreditar comisión al Administrador
+    const adminWalletId = await ensureWallet(client, ADMIN_ID);
     await client.query(
-      `INSERT INTO transactions (id, type, status, from_wallet_id, from_currency, from_amount, to_amount, to_currency, description)
-       VALUES ($1, 'withdraw', 'completed', $2, $3, $4, $4, $3, $5)`,
-      [txId, walletId, currencyCode, amount, finalDescription]
+      `INSERT INTO balances (id, wallet_id, currency_code, amount)
+       VALUES ($1, $2, $3, $4)
+       ON CONFLICT (wallet_id, currency_code)
+       DO UPDATE SET amount = balances.amount + EXCLUDED.amount`,
+      [randomUUID(), adminWalletId, currencyCode, fee]
+    );
+
+    const txId = randomUUID();
+    const finalDescription = userDescription || `Retiro de ${amount} ${currencyCode} (Comisión 3%)`;
+    await client.query(
+      `INSERT INTO transactions (id, type, status, from_wallet_id, from_currency, from_amount, to_amount, fee, description)
+       VALUES ($1, 'withdraw', 'completed', $2, $3, $4, $5, $6, $7)`,
+      [txId, walletId, currencyCode, amount, toAmount, fee, finalDescription]
     );
 
     await client.query('COMMIT');
@@ -161,7 +179,7 @@ export const withdrawFunds = async (userId: string, amount: number, currencyCode
     if (user) {
       sendEmail({
         to: user.email,
-        ...getWithdrawTemplate(user.name, amount, currencyCode)
+        ...getWithdrawTemplate(user.name, amount, currencyCode, fee)
       }).catch(err => console.error('Error enviando correo de retiro:', err));
     }
 
