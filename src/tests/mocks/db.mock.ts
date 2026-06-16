@@ -14,3 +14,5 @@ vi.mock('../db', () => ({
   default: mPool,
   query: mPool.query,
 }));
+
+export default mPool;

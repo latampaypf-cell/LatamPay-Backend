@@ -17,9 +17,11 @@ CREATE TABLE exchange_rates (
     to_currency   VARCHAR(10)  NOT NULL REFERENCES currencies(code),
     rate          NUMERIC(19, 8) NOT NULL CHECK (rate > 0),
     created_at    TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
-    updated_at    TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT unique_currency_pair UNIQUE (from_currency, to_currency)
+    updated_at    TIMESTAMP    DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Agregamos un índice para optimizar la búsqueda de cotizaciones recientes
+CREATE INDEX idx_exchange_rates_lookup ON exchange_rates(from_currency, to_currency, created_at DESC);
 
 -- 3. Tabla de Usuarios
 CREATE TABLE users (
