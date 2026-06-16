@@ -19,9 +19,66 @@ API REST robusta para **LatamPay**, una plataforma de pagos y transferencias dis
 *   **Documentación:** Swagger (OpenAPI 3.0) con componentes reutilizables
 *   **Asistente IA:** Google Gemini (Respuestas personalizadas y públicas)
 *   **Emailing:** AWS SES (Amazon Simple Email Service) con soporte para modo Mock
-*   **Testing:** Vitest 3+ & Supertest (51 tests de integración pasando)
+*   **Testing:** Vitest 3+ & Supertest (Tests de integración pasando)
 *   **Tareas Programadas:** node-cron (Sincronización horaria de divisas)
 *   **Logs & Tooling:** ts-node-dev, dotenv, CORS modularizado
+
+## 🚀 Instalación y Configuración (Local)
+
+### 1. Clonar el repositorio
+```bash
+git clone https://github.com/tu-usuario/LatamPay-Backend.git
+cd LatamPay-Backend
+```
+
+### 2. Instalar dependencias
+```bash
+npm install
+```
+
+### 3. Configurar variables de entorno
+Crea un archivo `.env` en la raíz del proyecto basándote en `.env.example` y completa los valores requeridos (Database URL, JWT Secret, Gemini API Key, etc.).
+
+### 4. Inicializar la Base de Datos (PostgreSQL)
+Asegúrate de tener PostgreSQL corriendo y crea una base de datos llamada `latampay_db`. Luego, ejecuta los scripts en el siguiente orden:
+
+```bash
+# 1. Crear la estructura de tablas
+psql -U postgres -d latampay_db -f sql/schema.sql
+
+# 2. Cargar datos básicos y usuarios de prueba
+psql -U postgres -d latampay_db -f sql/seed.sql
+
+# 3. (Opcional) Cargar historial de cotizaciones de 30 días para gráficos
+psql -U postgres -d latampay_db -f sql/seed-cotizacion.sql
+```
+
+### 5. Iniciar el servidor
+```bash
+# Modo desarrollo (con hot-reload)
+npm run dev
+
+# Modo producción
+npm run build
+npm start
+```
+
+## 🧪 Testing
+
+La suite de pruebas utiliza **Vitest**. Para ejecutar los tests:
+
+```bash
+# Correr todos los tests
+npm run test
+
+# Correr tests con reporte de cobertura
+npm run test:coverage
+```
+
+## 📖 Documentación de la API
+
+Una vez que el servidor esté corriendo, puedes acceder a la documentación interactiva de Swagger en:
+`http://localhost:3000/api-docs`
 
 ## 🏗️ Arquitectura del Proyecto (SOLID & Clean Architecture)
 

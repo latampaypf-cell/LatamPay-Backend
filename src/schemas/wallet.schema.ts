@@ -13,6 +13,11 @@ export const swapSchema = z.object({
   description: z.string().max(100, 'La descripción es muy larga.').optional(),
 });
 
+export const exchangeHistorySchema = z.object({
+  from: z.string().min(3).max(10),
+  to: z.string().min(3).max(10),
+});
+
 export const transferSchema = z.object({
   to_identifier: z.string().min(1, 'El CBU o Alias es obligatorio.'),
   amount: z.number().positive('El monto debe ser mayor a cero.'),
@@ -28,5 +33,6 @@ export const withdrawSchema = z.object({
 
 export type DepositInput = z.infer<typeof depositSchema>;
 export type SwapInput = z.infer<typeof swapSchema>;
+export type ExchangeHistoryInput = z.infer<typeof exchangeHistorySchema>;
 export type TransferInput = z.infer<typeof transferSchema>;
 export type WithdrawInput = z.infer<typeof withdrawSchema>;
