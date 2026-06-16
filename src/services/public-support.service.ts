@@ -28,10 +28,10 @@ REGLAS DE SEGURIDAD Y RESPUESTA (CRÍTICO):
 export class PublicSupportService {
   static async getInformationalReply(message: string, history: ChatMessage[] = []) {
     // MOCK: Si está activado, devolvemos respuesta estática para ahorrar tokens
-    if (config.mockBot) {
-      console.log('🤖 [MOCK-BOT]: Respondiendo en modo simulación (Gratis)');
-      return `[MOCK] Hola! Recibí tu mensaje: "${message}". Actualmente estoy en modo de prueba para no consumir tokens.`;
-    }
+    // if (config.mockBot) {
+    //   console.log('🤖 [MOCK-BOT]: Respondiendo en modo simulación (Gratis)');
+    //   return `[MOCK] Hola! Recibí tu mensaje: "${message}". Actualmente estoy en modo de prueba para no consumir tokens.`;
+    // }
 
     if (!config.geminiApiKey) {
       throw new AppError('El servicio de chat no está configurado (falta API Key)', 500);
