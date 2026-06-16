@@ -16,8 +16,6 @@ const SECONDARY_COLOR = '#666666';
 const SUCCESS_COLOR = '#10B981'; // emerald-500
 const WARNING_COLOR = '#EF4444'; // red-500
 
-const LOGO_URL = 'https://latam-pay-frontend.vercel.app/apple-touch-icon.png?v=2';
-
 // CDN público de Icons8 (PNG estables, no requieren auth)
 const SOCIAL_ICONS = {
   instagram: 'https://img.icons8.com/color/48/instagram-new.png',
@@ -196,8 +194,7 @@ const buildTransferEmail = (opts: TransferEmailOpts) => {
                         <tbody>
                           <tr>
                             <td align="center" style="padding:40px 35px;">
-                              <img src="${LOGO_URL}" alt="LatamPay" width="72" height="72" style="display:block;margin:0 auto;border-radius:16px;">
-                              <h1 style="color:#ffffff;font-size:30px;font-weight:700;margin:18px 0 6px 0;letter-spacing:1px;font-family:Inter,Arial,sans-serif;">
+                              <h1 style="color:#ffffff;font-size:32px;font-weight:700;margin:0 0 6px 0;letter-spacing:1px;font-family:Inter,Arial,sans-serif;">
                                 Latam<span style="color:${BRAND_CYAN};">Pay</span>
                               </h1>
                               <p style="color:#94A3B8;font-size:13px;margin:0;font-family:Inter,Arial,sans-serif;">
