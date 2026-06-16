@@ -8,10 +8,10 @@ import config from '../config';
 export class UserSupportService {
   static async getPersonalizedReply(userId: string, message: string, history: ChatMessage[] = []) {
     // MOCK: Si está activado, devolvemos respuesta estática
-    if (config.mockBot) {
-      console.log('🤖 [MOCK-BOT]: Respondiendo en modo simulación (Gratis)');
-      return `[MOCK] Hola usuario ${userId}, estoy en modo simulación. Tu pregunta fue: "${message}"`;
-    }
+    // if (config.mockBot) {
+    //   console.log('🤖 [MOCK-BOT]: Respondiendo en modo simulación (Gratis)');
+    //   return `[MOCK] Hola usuario ${userId}, estoy en modo simulación. Tu pregunta fue: "${message}"`;
+    // }
 
     if (!config.geminiApiKey) {
       throw new AppError('El servicio de chat no está configurado (falta API Key)', 500);
