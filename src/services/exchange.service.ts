@@ -4,6 +4,7 @@ import config from '../config';
 import { AppError } from '../utils/AppError';
 import { sendEmail } from './email.service';
 import { getSwapTemplate } from '../utils/email-templates';
+import { ExchangeRate, ExchangeHistory } from '../types/exchange.types';
 
 const ADMIN_ID = '11111111-1111-1111-1111-111111111111';
 const COMMISSION_RATE = 0.03;
@@ -55,14 +56,17 @@ export const syncExchangeRates = async (): Promise<void> => {
           const finalRate = rateToBase / rateFromBase;
 
           await client.query(
-            `INSERT INTO exchange_rates (id, from_currency, to_currency, rate, updated_at)
-             VALUES ($1, $2, $3, $4, NOW())
-             ON CONFLICT (from_currency, to_currency) 
-             DO UPDATE SET rate = EXCLUDED.rate, updated_at = NOW()`,
+            `INSERT INTO exchange_rates (id, from_currency, to_currency, rate)
+             VALUES ($1, $2, $3, $4)`,
             [randomUUID(), from, to, finalRate]
           );
         }
       }
+
+      // Limpieza de historial viejo (mantenemos los últimos 30 días)
+      await client.query(
+        "DELETE FROM exchange_rates WHERE created_at < NOW() - INTERVAL '30 days'"
+      );
 
       await client.query('COMMIT');
       console.log('✅ Tasas de cambio actualizadas correctamente.');
@@ -82,9 +86,26 @@ export const syncExchangeRates = async (): Promise<void> => {
 /**
  * Obtiene todas las tasas de cambio almacenadas en la base de datos.
  */
-export const getStoredExchangeRates = async () => {
-  const result = await pool.query<{ from_currency: string; to_currency: string; rate: number; updated_at: Date }>(
-    'SELECT from_currency, to_currency, rate, updated_at FROM exchange_rates'
+export const getStoredExchangeRates = async (): Promise<ExchangeRate[]> => {
+  const result = await pool.query<ExchangeRate>(
+    `SELECT DISTINCT ON (from_currency, to_currency) 
+            from_currency, to_currency, rate, created_at as updated_at 
+     FROM exchange_rates 
+     ORDER BY from_currency, to_currency, created_at DESC`
+  );
+  return result.rows;
+};
+
+/**
+ * Obtiene el historial de cotizaciones para un par de monedas específico.
+ */
+export const getExchangeHistory = async (from: string, to: string): Promise<ExchangeHistory[]> => {
+  const result = await pool.query<ExchangeHistory>(
+    `SELECT rate, created_at 
+     FROM exchange_rates 
+     WHERE from_currency = $1 AND to_currency = $2 
+     ORDER BY created_at ASC`,
+    [from, to]
   );
   return result.rows;
 };
@@ -109,9 +130,9 @@ export const swapCurrency = async (userId: string, fromCurrency: string, toCurre
     const currentBalance = balanceRes.rows[0]?.amount || 0;
     if (Number(currentBalance) < amount) throw new AppError('Saldo insuficiente.', 400);
 
-    // 2. Obtener tasa de cambio
+    // 2. Obtener tasa de cambio (la más reciente)
     const rateRes = await client.query(
-      'SELECT rate FROM exchange_rates WHERE from_currency = $1 AND to_currency = $2',
+      'SELECT rate FROM exchange_rates WHERE from_currency = $1 AND to_currency = $2 ORDER BY created_at DESC LIMIT 1',
       [fromCurrency, toCurrency]
     );
     if (rateRes.rows.length === 0) throw new AppError('Tasa de cambio no disponible.', 404);
