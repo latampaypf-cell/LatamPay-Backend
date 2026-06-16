@@ -9,7 +9,7 @@ export const depositSchema = z.object({
 export const swapSchema = z.object({
   from_currency: z.string().min(3).max(10),
   to_currency: z.string().min(3).max(10),
-  amount: z.number().positive('El monto a cambiar debe ser mayor a cero.'),
+  amount: z.number().min(0.01, 'El monto a cambiar debe ser mayor a 0.01.'),
   description: z.string().max(100, 'La descripción es muy larga.').optional(),
 });
 
@@ -21,7 +21,7 @@ export const transferSchema = z.object({
 });
 
 export const withdrawSchema = z.object({
-  amount: z.number().positive('El monto a retirar debe ser mayor a cero.'),
+  amount: z.number().min(1, 'El monto mínimo de retiro es 1.'),
   currency_code: z.string().min(3).max(10),
   description: z.string().max(100, 'La descripción es muy larga.').optional(),
 });

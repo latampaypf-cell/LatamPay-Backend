@@ -32,11 +32,13 @@ describe('Operaciones Financieras - Retiro', () => {
       .mockResolvedValueOnce({ rows: [] }) // BEGIN
       .mockResolvedValueOnce({ rows: [{ id: 'wallet-123' }] }) // SELECT wallet
       .mockResolvedValueOnce({ rows: [{ amount: 1000 }] }) // SELECT balance (suficiente)
-      .mockResolvedValueOnce({ rows: [] }) // UPDATE balance
+      .mockResolvedValueOnce({ rows: [] }) // UPDATE balance (usuario)
+      .mockResolvedValueOnce({ rows: [{ id: 'admin-wallet' }] }) // ensureWallet (admin)
+      .mockResolvedValueOnce({ rows: [] }) // INSERT balance (admin commission)
       .mockResolvedValueOnce({ rows: [] }) // INSERT transaction
       .mockResolvedValueOnce({ rows: [] }) // COMMIT
       .mockResolvedValueOnce({ rows: [{ email: 'test@test.com', name: 'Test' }] }) // SELECT user email
-      .mockResolvedValueOnce({ rows: [{ id: 'tx-123', amount: 500, type: 'withdraw' }] }); // getTransactionById
+      .mockResolvedValueOnce({ rows: [{ id: 'tx-123', from_amount: 500, to_amount: 485, fee: 15, type: 'withdraw' }] }); // getTransactionById
 
     (db.default.connect as any).mockResolvedValueOnce(mClient);
 
@@ -46,7 +48,18 @@ describe('Operaciones Financieras - Retiro', () => {
 
     expect(response.status).toBe(200);
     expect(response.body.status).toBe('success');
-    expect(response.body.data.amount).toBe(500);
+    expect(response.body.data.from_amount).toBe(500);
+    expect(response.body.data.to_amount).toBe(485);
+    expect(response.body.data.fee).toBe(15);
+  });
+
+  it('debería fallar si el monto es menor al mínimo (1)', async () => {
+    const response = await request(app)
+      .post('/api/transactions/withdraw')
+      .send({ amount: 0.5, currency_code: 'ARS' });
+
+    expect(response.status).toBe(400);
+    expect(response.body.message).toContain('mínimo');
   });
 
   it('debería fallar si no hay saldo suficiente', async () => {
