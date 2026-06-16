@@ -253,14 +253,14 @@ export const transferFunds = async (userId: string, toIdentifier: string, amount
     if (fromUser) {
       sendEmail({
         to: fromUser.email,
-        ...getTransferSentTemplate(fromUser.name, amount, currencyCode, toUser?.name || toIdentifier)
+        ...getTransferSentTemplate(fromUser.name, amount, currencyCode, toUser?.name || toIdentifier, userDescription)
       }).catch(err => console.error('Error enviando correo al emisor:', err));
     }
 
     if (toUser) {
       sendEmail({
         to: toUser.email,
-        ...getTransferReceivedTemplate(toUser.name, amount, currencyCode, fromUser?.name || 'un usuario')
+        ...getTransferReceivedTemplate(toUser.name, amount, currencyCode, fromUser?.name || 'un usuario', userDescription)
       }).catch(err => console.error('Error enviando correo al receptor:', err));
     }
 

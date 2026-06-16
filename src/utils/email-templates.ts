@@ -16,7 +16,7 @@ const SECONDARY_COLOR = '#666666';
 const SUCCESS_COLOR = '#10B981'; // emerald-500
 const WARNING_COLOR = '#EF4444'; // red-500
 
-const LOGO_URL = 'https://latam-pay-frontend.vercel.app/apple-touch-icon.png';
+const LOGO_URL = 'https://latam-pay-frontend.vercel.app/apple-touch-icon.png?v=2';
 
 // CDN público de Icons8 (PNG estables, no requieren auth)
 const SOCIAL_ICONS = {
@@ -143,6 +143,7 @@ type TransferEmailOpts = {
   counterpartyName: string;
   amount: number;
   currency: string;
+  description?: string;
 };
 
 const formatAmount = (amount: number) =>
@@ -240,13 +241,13 @@ const buildTransferEmail = (opts: TransferEmailOpts) => {
                                           <td style="padding:12px 16px;text-align:right;font-weight:bold;">${opts.counterpartyName}</td>
                                         </tr>
                                         <tr>
-                                          <td style="padding:12px 16px;color:${SECONDARY_COLOR};border-top:1px solid #eeeeee;">Monto:</td>
-                                          <td style="padding:12px 16px;text-align:right;font-weight:bold;border-top:1px solid #eeeeee;color:${amountColor};">${formatAmount(opts.amount)} ${opts.currency}</td>
-                                        </tr>
-                                        <tr>
                                           <td style="padding:12px 16px;color:${SECONDARY_COLOR};border-top:1px solid #eeeeee;">Fecha:</td>
                                           <td style="padding:12px 16px;text-align:right;border-top:1px solid #eeeeee;">${formatDate(new Date())}</td>
                                         </tr>
+                                        ${opts.description ? `<tr>
+                                          <td style="padding:12px 16px;color:${SECONDARY_COLOR};border-top:1px solid #eeeeee;">Motivo:</td>
+                                          <td style="padding:12px 16px;text-align:right;border-top:1px solid #eeeeee;">${opts.description}</td>
+                                        </tr>` : ''}
                                       </table>
                                     </td>
                                   </tr>
@@ -255,35 +256,6 @@ const buildTransferEmail = (opts: TransferEmailOpts) => {
                             </td>
                           </tr>
 
-                          <!-- Security notice -->
-                          <tr>
-                            <td align="left" style="padding:40px 35px 35px 35px;">
-                              <table width="100%" cellpadding="0" cellspacing="0">
-                                <tbody>
-                                  <tr>
-                                    <td align="left" width="530">
-                                      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-                                        <tbody>
-                                          <tr>
-                                            <td align="center">
-                                              <h5 style="margin:0;color:#333333;"><strong>Aviso de seguridad</strong></h5>
-                                            </td>
-                                          </tr>
-                                          <tr>
-                                            <td align="center" style="padding-top:10px;">
-                                              <p style="margin:0;color:${SECONDARY_COLOR};line-height:1.5;">
-                                                Si no reconocés esta operación, contactá a soporte de inmediato.
-                                              </p>
-                                            </td>
-                                          </tr>
-                                        </tbody>
-                                      </table>
-                                    </td>
-                                  </tr>
-                                </tbody>
-                              </table>
-                            </td>
-                          </tr>
                         </tbody>
                       </table>
                     </td>
@@ -299,89 +271,10 @@ const buildTransferEmail = (opts: TransferEmailOpts) => {
                       <table cellspacing="0" cellpadding="0" bgcolor="#ffffff" align="center" width="600">
                         <tbody>
                           <tr>
-                            <td align="left" style="padding:45px;">
-                              <table cellpadding="0" align="right" cellspacing="0">
-                                <tbody>
-                                  <tr>
-                                    <td align="left" width="510">
-                                      <table cellpadding="0" width="100%" cellspacing="0">
-                                        <tbody>
-                                          <tr>
-                                            <td align="center" style="font-size:0;padding-bottom:30px;">
-                                              <table cellpadding="0" cellspacing="0" align="center">
-                                                <tbody>
-                                                  <tr>
-                                                    <td valign="middle" align="center" style="padding:0 14px;">
-                                                      <a href="#" target="_blank" style="text-decoration:none;">
-                                                        <img height="40" width="40" title="Instagram" alt="Instagram" src="${SOCIAL_ICONS.instagram}" style="display:block;border:0;">
-                                                      </a>
-                                                    </td>
-                                                    <td valign="middle" align="center" style="padding:0 14px;">
-                                                      <a target="_blank" href="#" style="text-decoration:none;">
-                                                        <img height="40" width="40" title="X" alt="X" src="${SOCIAL_ICONS.x}" style="display:block;border:0;">
-                                                      </a>
-                                                    </td>
-                                                    <td valign="middle" align="center" style="padding:0 14px;">
-                                                      <a href="#" target="_blank" style="text-decoration:none;">
-                                                        <img height="40" width="40" title="TikTok" alt="TikTok" src="${SOCIAL_ICONS.tiktok}" style="display:block;border:0;">
-                                                      </a>
-                                                    </td>
-                                                  </tr>
-                                                </tbody>
-                                              </table>
-                                            </td>
-                                          </tr>
-                                          <tr>
-                                            <td style="font-family:Inter,Arial,sans-serif;font-size:0;">
-                                              <table cellpadding="0" cellspacing="0" width="100%">
-                                                <tbody>
-                                                  <tr>
-                                                    <td valign="top" width="25%" align="center" style="padding:5px 0;">
-                                                      <a href="#" target="_blank" style="font-family:Inter,Arial,sans-serif;font-size:14px;color:#333333;text-decoration:none;">Inicio</a>
-                                                    </td>
-                                                    <td align="center" valign="top" width="25%" style="padding:5px 0;border-left:1px solid #151515;">
-                                                      <a href="#" target="_blank" style="font-size:14px;font-family:Inter,Arial,sans-serif;color:#333333;text-decoration:none;">Conversor</a>
-                                                    </td>
-                                                    <td valign="top" width="25%" align="center" style="padding:5px 0;border-left:1px solid #151515;">
-                                                      <a target="_blank" href="#" style="font-size:14px;font-family:Inter,Arial,sans-serif;color:#333333;text-decoration:none;">Movimientos</a>
-                                                    </td>
-                                                    <td align="center" valign="top" width="25%" style="padding:5px 0;border-left:1px solid #151515;">
-                                                      <a href="#" target="_blank" style="font-family:Inter,Arial,sans-serif;font-size:14px;color:#333333;text-decoration:none;">Soporte</a>
-                                                    </td>
-                                                  </tr>
-                                                </tbody>
-                                              </table>
-                                            </td>
-                                          </tr>
-                                          <tr>
-                                            <td style="font-family:Inter,Arial,sans-serif;font-size:0;padding:30px 0 20px 0;">
-                                              <table cellspacing="0" width="100%" cellpadding="0">
-                                                <tbody>
-                                                  <tr>
-                                                    <td width="50%" align="right" valign="top" style="padding:5px 15px;">
-                                                      <a target="_blank" href="#" style="font-family:Inter,Arial,sans-serif;font-size:12px;color:#333333;text-decoration:none;">Privacidad</a>
-                                                    </td>
-                                                    <td valign="top" width="50%" align="left" style="padding:5px 15px;border-left:1px solid #151515;">
-                                                      <a href="#" target="_blank" style="font-family:Inter,Arial,sans-serif;font-size:12px;color:#333333;text-decoration:none;">Términos</a>
-                                                    </td>
-                                                  </tr>
-                                                </tbody>
-                                              </table>
-                                            </td>
-                                          </tr>
-                                          <tr>
-                                            <td align="center" style="padding:10px 0;">
-                                              <p style="line-height:200%;margin:0;color:${SECONDARY_COLOR};font-size:12px;">
-                                                &copy; 2026 LatamPay S.A. — América Latina
-                                              </p>
-                                            </td>
-                                          </tr>
-                                        </tbody>
-                                      </table>
-                                    </td>
-                                  </tr>
-                                </tbody>
-                              </table>
+                            <td align="center" style="padding:25px 45px 35px 45px;">
+                              <p style="line-height:200%;margin:0;color:${SECONDARY_COLOR};font-size:12px;">
+                                &copy; 2026 LatamPay S.A. — América Latina
+                              </p>
                             </td>
                           </tr>
                         </tbody>
@@ -402,30 +295,32 @@ const buildTransferEmail = (opts: TransferEmailOpts) => {
 /**
  * Plantilla: Transferencia Enviada (Comprobante)
  */
-export const getTransferSentTemplate = (name: string, amount: number, currency: string, toName: string) => ({
+export const getTransferSentTemplate = (name: string, amount: number, currency: string, toName: string, description?: string) => ({
   subject: 'Comprobante de Transferencia - LatamPay 📄',
-  text: `Has enviado ${formatAmount(amount)} ${currency} a ${toName}.`,
+  text: `Has enviado ${formatAmount(amount)} ${currency} a ${toName}.${description ? ` Motivo: ${description}.` : ''}`,
   html: buildTransferEmail({
     direction: 'sent',
     name,
     counterpartyName: toName,
     amount,
     currency,
+    description,
   }),
 });
 
 /**
  * Plantilla: Transferencia Recibida
  */
-export const getTransferReceivedTemplate = (name: string, amount: number, currency: string, fromName: string) => ({
+export const getTransferReceivedTemplate = (name: string, amount: number, currency: string, fromName: string, description?: string) => ({
   subject: '¡Has recibido dinero! 💰',
-  text: `Hola ${name}, has recibido ${formatAmount(amount)} ${currency} de ${fromName}.`,
+  text: `Hola ${name}, has recibido ${formatAmount(amount)} ${currency} de ${fromName}.${description ? ` Motivo: ${description}.` : ''}`,
   html: buildTransferEmail({
     direction: 'received',
     name,
     counterpartyName: fromName,
     amount,
     currency,
+    description,
   }),
 });
 
