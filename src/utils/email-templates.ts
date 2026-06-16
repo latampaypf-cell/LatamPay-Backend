@@ -16,8 +16,6 @@ const SECONDARY_COLOR = '#666666';
 const SUCCESS_COLOR = '#10B981'; // emerald-500
 const WARNING_COLOR = '#EF4444'; // red-500
 
-const LOGO_URL = 'https://latam-pay-frontend.vercel.app/apple-touch-icon.png?v=2';
-
 // CDN público de Icons8 (PNG estables, no requieren auth)
 const SOCIAL_ICONS = {
   instagram: 'https://img.icons8.com/color/48/instagram-new.png',
@@ -161,16 +159,17 @@ const formatDate = (date: Date) =>
     minute: '2-digit',
   });
 
-const buildTransferEmail = (opts: TransferEmailOpts) => {
-  const isSent = opts.direction === 'sent';
-  const title = isSent ? 'Transferencia enviada' : 'Transferencia recibida';
-  const intro = isSent
-    ? `Hola <strong>${opts.name}</strong>, tu envío de dinero se ha completado.`
-    : `Hola <strong>${opts.name}</strong>, recibiste una transferencia en tu cuenta.`;
-  const counterpartyLabel = isSent ? 'Destinatario' : 'Remitente';
-  const amountColor = isSent ? APP_COLOR : SUCCESS_COLOR;
+const formatRate = (rate: number) =>
+  new Intl.NumberFormat('es-AR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 6,
+  }).format(rate);
 
-  return `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+/**
+ * Shell común para los mails operacionales (header dark + content card + footer copyright).
+ * El contenido específico de cada operación se inyecta como HTML.
+ */
+const buildEmailShell = (htmlTitle: string, contentHtml: string) => `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html dir="ltr" xmlns="http://www.w3.org/1999/xhtml" xmlns:o="urn:schemas-microsoft-com:office:office">
   <head>
     <meta charset="UTF-8">
@@ -178,7 +177,7 @@ const buildTransferEmail = (opts: TransferEmailOpts) => {
     <meta name="x-apple-disable-message-reformatting">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta content="telephone=no" name="format-detection">
-    <title>${title}</title>
+    <title>${htmlTitle}</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter&display=swap">
   </head>
   <body style="margin:0;padding:0;font-family:Inter,Arial,sans-serif;background-color:#f4f4f4;">
@@ -187,7 +186,7 @@ const buildTransferEmail = (opts: TransferEmailOpts) => {
         <tbody>
           <tr>
             <td valign="top">
-              <!-- Header con logo + wordmark LatamPay -->
+              <!-- Header -->
               <table cellspacing="0" cellpadding="0" align="center">
                 <tbody>
                   <tr>
@@ -196,8 +195,7 @@ const buildTransferEmail = (opts: TransferEmailOpts) => {
                         <tbody>
                           <tr>
                             <td align="center" style="padding:40px 35px;">
-                              <img src="${LOGO_URL}" alt="LatamPay" width="72" height="72" style="display:block;margin:0 auto;border-radius:16px;">
-                              <h1 style="color:#ffffff;font-size:30px;font-weight:700;margin:18px 0 6px 0;letter-spacing:1px;font-family:Inter,Arial,sans-serif;">
+                              <h1 style="color:#ffffff;font-size:32px;font-weight:700;margin:0 0 6px 0;letter-spacing:1px;font-family:Inter,Arial,sans-serif;">
                                 Latam<span style="color:${BRAND_CYAN};">Pay</span>
                               </h1>
                               <p style="color:#94A3B8;font-size:13px;margin:0;font-family:Inter,Arial,sans-serif;">
@@ -225,37 +223,13 @@ const buildTransferEmail = (opts: TransferEmailOpts) => {
                                 <tbody>
                                   <tr>
                                     <td width="530" valign="top" align="center">
-                                      <h1 style="margin:0 0 10px 0;color:${amountColor};font-size:32px;">
-                                        ${formatAmount(opts.amount)} ${opts.currency}
-                                      </h1>
-                                      <h2 style="margin:0 0 20px 0;color:#333333;font-size:22px;">
-                                        ${title}
-                                      </h2>
-                                      <p style="margin:0 0 25px 0;color:#333333;line-height:1.5;">
-                                        ${intro}
-                                      </p>
-
-                                      <table style="width:100%;background-color:#f8f9fa;border-radius:8px;margin:20px 0;border-collapse:collapse;">
-                                        <tr>
-                                          <td style="padding:12px 16px;color:${SECONDARY_COLOR};">${counterpartyLabel}:</td>
-                                          <td style="padding:12px 16px;text-align:right;font-weight:bold;">${opts.counterpartyName}</td>
-                                        </tr>
-                                        <tr>
-                                          <td style="padding:12px 16px;color:${SECONDARY_COLOR};border-top:1px solid #eeeeee;">Fecha:</td>
-                                          <td style="padding:12px 16px;text-align:right;border-top:1px solid #eeeeee;">${formatDate(new Date())}</td>
-                                        </tr>
-                                        ${opts.description ? `<tr>
-                                          <td style="padding:12px 16px;color:${SECONDARY_COLOR};border-top:1px solid #eeeeee;">Motivo:</td>
-                                          <td style="padding:12px 16px;text-align:right;border-top:1px solid #eeeeee;">${opts.description}</td>
-                                        </tr>` : ''}
-                                      </table>
+                                      ${contentHtml}
                                     </td>
                                   </tr>
                                 </tbody>
                               </table>
                             </td>
                           </tr>
-
                         </tbody>
                       </table>
                     </td>
@@ -290,6 +264,96 @@ const buildTransferEmail = (opts: TransferEmailOpts) => {
     </div>
   </body>
 </html>`;
+
+const buildTransferEmail = (opts: TransferEmailOpts) => {
+  const isSent = opts.direction === 'sent';
+  const title = isSent ? 'Transferencia enviada' : 'Transferencia recibida';
+  const intro = isSent
+    ? `Hola <strong>${opts.name}</strong>, tu envío de dinero se ha completado.`
+    : `Hola <strong>${opts.name}</strong>, recibiste una transferencia en tu cuenta.`;
+  const counterpartyLabel = isSent ? 'Destinatario' : 'Remitente';
+  const amountColor = isSent ? APP_COLOR : SUCCESS_COLOR;
+
+  const content = `
+    <h1 style="margin:0 0 10px 0;color:${amountColor};font-size:32px;">
+      ${formatAmount(opts.amount)} ${opts.currency}
+    </h1>
+    <h2 style="margin:0 0 20px 0;color:#333333;font-size:22px;">
+      ${title}
+    </h2>
+    <p style="margin:0 0 25px 0;color:#333333;line-height:1.5;">
+      ${intro}
+    </p>
+
+    <table style="width:100%;background-color:#f8f9fa;border-radius:8px;margin:20px 0;border-collapse:collapse;">
+      <tr>
+        <td style="padding:12px 16px;color:${SECONDARY_COLOR};">${counterpartyLabel}:</td>
+        <td style="padding:12px 16px;text-align:right;font-weight:bold;">${opts.counterpartyName}</td>
+      </tr>
+      <tr>
+        <td style="padding:12px 16px;color:${SECONDARY_COLOR};border-top:1px solid #eeeeee;">Fecha:</td>
+        <td style="padding:12px 16px;text-align:right;border-top:1px solid #eeeeee;">${formatDate(new Date())}</td>
+      </tr>
+      ${opts.description ? `<tr>
+        <td style="padding:12px 16px;color:${SECONDARY_COLOR};border-top:1px solid #eeeeee;">Motivo:</td>
+        <td style="padding:12px 16px;text-align:right;border-top:1px solid #eeeeee;">${opts.description}</td>
+      </tr>` : ''}
+    </table>
+  `;
+
+  return buildEmailShell(title, content);
+};
+
+type SwapEmailOpts = {
+  name: string;
+  fromAmount: number;
+  fromCurr: string;
+  toAmount: number;
+  toCurr: string;
+  fee: number;
+  rate: number;
+};
+
+const buildSwapEmail = (opts: SwapEmailOpts) => {
+  const title = 'Conversión realizada';
+  const intro = `Hola <strong>${opts.name}</strong>, tu cambio de divisas se realizó con éxito.`;
+
+  const content = `
+    <h1 style="margin:0 0 10px 0;color:${SUCCESS_COLOR};font-size:32px;">
+      ${formatAmount(opts.toAmount)} ${opts.toCurr}
+    </h1>
+    <h2 style="margin:0 0 20px 0;color:#333333;font-size:22px;">
+      ${title}
+    </h2>
+    <p style="margin:0 0 25px 0;color:#333333;line-height:1.5;">
+      ${intro}
+    </p>
+
+    <table style="width:100%;background-color:#f8f9fa;border-radius:8px;margin:20px 0;border-collapse:collapse;">
+      <tr>
+        <td style="padding:12px 16px;color:${SECONDARY_COLOR};">Entregaste:</td>
+        <td style="padding:12px 16px;text-align:right;font-weight:bold;">${formatAmount(opts.fromAmount)} ${opts.fromCurr}</td>
+      </tr>
+      <tr>
+        <td style="padding:12px 16px;color:${SECONDARY_COLOR};border-top:1px solid #eeeeee;">Recibiste:</td>
+        <td style="padding:12px 16px;text-align:right;font-weight:bold;border-top:1px solid #eeeeee;color:${SUCCESS_COLOR};">${formatAmount(opts.toAmount)} ${opts.toCurr}</td>
+      </tr>
+      <tr>
+        <td style="padding:12px 16px;color:${SECONDARY_COLOR};border-top:1px solid #eeeeee;">Comisión (3%):</td>
+        <td style="padding:12px 16px;text-align:right;border-top:1px solid #eeeeee;color:${WARNING_COLOR};">-${formatAmount(opts.fee)} ${opts.toCurr}</td>
+      </tr>
+      <tr>
+        <td style="padding:12px 16px;color:${SECONDARY_COLOR};border-top:1px solid #eeeeee;">Tasa aplicada:</td>
+        <td style="padding:12px 16px;text-align:right;border-top:1px solid #eeeeee;">1 ${opts.fromCurr} = ${formatRate(opts.rate)} ${opts.toCurr}</td>
+      </tr>
+      <tr>
+        <td style="padding:12px 16px;color:${SECONDARY_COLOR};border-top:1px solid #eeeeee;">Fecha:</td>
+        <td style="padding:12px 16px;text-align:right;border-top:1px solid #eeeeee;">${formatDate(new Date())}</td>
+      </tr>
+    </table>
+  `;
+
+  return buildEmailShell(title, content);
 };
 
 /**
@@ -327,32 +391,8 @@ export const getTransferReceivedTemplate = (name: string, amount: number, curren
 /**
  * Plantilla: Intercambio (Swap)
  */
-export const getSwapTemplate = (name: string, fromAmount: number, fromCurr: string, toAmount: number, toCurr: string, fee: number) => ({
-  subject: 'Intercambio de divisas exitoso - LatamPay 🔄',
-  text: `Has cambiado ${fromAmount} ${fromCurr} por ${toAmount} ${toCurr} (Comisión: ${fee} ${toCurr}).`,
-  html: baseLayout(`
-    <h2 style="color: #333333; margin-top: 0;">Resumen de Intercambio</h2>
-    <p>Hola <strong>${name}</strong>, tu cambio de divisa se ha realizado con éxito.</p>
-    <div style="background-color: #f8f9fa; border-radius: 8px; padding: 20px; margin: 25px 0; border: 1px solid #eeeeee;">
-      <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-        <span style="color: ${SECONDARY_COLOR};">Entregaste:</span>
-        <span style="font-weight: bold;">${fromAmount} ${fromCurr}</span>
-      </div>
-      <div style="text-align: center; margin: 10px 0; font-size: 20px;">⬇️</div>
-      <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-        <span style="color: ${SECONDARY_COLOR};">Monto convertido:</span>
-        <span style="font-weight: bold;">${(toAmount + fee).toFixed(2)} ${toCurr}</span>
-      </div>
-      <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-        <span style="color: ${SECONDARY_COLOR};">Comisión (3%):</span>
-        <span style="color: ${WARNING_COLOR};">-${fee} ${toCurr}</span>
-      </div>
-      <hr style="border: 0; border-top: 1px solid #eeeeee; margin: 10px 0;">
-      <div style="display: flex; justify-content: space-between;">
-        <span style="color: #333333; font-weight: bold;">Recibiste en tu balance:</span>
-        <span style="font-size: 20px; font-weight: bold; color: ${SUCCESS_COLOR};">${toAmount} ${toCurr}</span>
-      </div>
-    </div>
-    <p>La tasa se aplicó según el valor de mercado al momento de la operación.</p>
-  `)
+export const getSwapTemplate = (name: string, fromAmount: number, fromCurr: string, toAmount: number, toCurr: string, fee: number, rate: number) => ({
+  subject: 'Conversión realizada - LatamPay 🔄',
+  text: `Hola ${name}, cambiaste ${formatAmount(fromAmount)} ${fromCurr} por ${formatAmount(toAmount)} ${toCurr} (tasa: 1 ${fromCurr} = ${formatRate(rate)} ${toCurr}, comisión: ${formatAmount(fee)} ${toCurr}).`,
+  html: buildSwapEmail({ name, fromAmount, fromCurr, toAmount, toCurr, fee, rate }),
 });

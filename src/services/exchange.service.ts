@@ -174,7 +174,7 @@ export const swapCurrency = async (userId: string, fromCurrency: string, toCurre
     if (user) {
       sendEmail({
         to: user.email,
-        ...getSwapTemplate(user.name, amount, fromCurrency, toAmount, toCurrency, fee)
+        ...getSwapTemplate(user.name, amount, fromCurrency, toAmount, toCurrency, fee, rate)
       }).catch(err => console.error('Error enviando correo de swap:', err));
     }
 
