@@ -19,9 +19,68 @@ API REST robusta para **LatamPay**, una plataforma de pagos y transferencias dis
 *   **Documentación:** Swagger (OpenAPI 3.0) con componentes reutilizables
 *   **Asistente IA:** Google Gemini (Respuestas personalizadas y públicas)
 *   **Emailing:** AWS SES (Amazon Simple Email Service) con soporte para modo Mock
-*   **Testing:** Vitest 3+ & Supertest (51 tests de integración pasando)
-*   **Tareas Programadas:** node-cron (Sincronización horaria de divisas)
+*   **Procesos en Segundo Plano:** node-cron (Worker para sincronización horaria de divisas)
+*   **Testing:** Vitest 3+ & Supertest (Tests de integración pasando)
 *   **Logs & Tooling:** ts-node-dev, dotenv, CORS modularizado
+
+## 🚀 Instalación y Configuración (Local)
+
+### 1. Clonar el repositorio
+```bash
+git clone https://github.com/tu-usuario/LatamPay-Backend.git
+cd LatamPay-Backend
+```
+
+### 2. Instalar dependencias
+```bash
+npm install
+```
+
+### 3. Configurar variables de entorno
+Crea un archivo `.env` en la raíz del proyecto basándote en `.env.example` y completa los valores requeridos (Database URL, JWT Secret, Gemini API Key, etc.).
+
+### 4. Inicializar la Base de Datos (PostgreSQL)
+Asegúrate de tener PostgreSQL corriendo y crea una base de datos llamada `latampay_db`. Luego, ejecuta los scripts en el siguiente orden:
+
+```bash
+# 1. Crear la estructura de tablas
+psql -U postgres -d latampay_db -f sql/schema.sql
+
+# 2. Cargar datos básicos y usuarios de prueba
+psql -U postgres -d latampay_db -f sql/seed.sql
+
+> ⚠️ **Seguridad:** El seed incluye un administrador por defecto (`admin@latampay.com` / `Password123`). Estas credenciales son **solo para desarrollo**. En producción, se debe cambiar la contraseña inmediatamente tras el despliegue.
+
+# 3. (Opcional) Cargar historial de cotizaciones de 30 días para gráficos
+psql -U postgres -d latampay_db -f sql/seed-cotizacion.sql
+```
+
+### 5. Iniciar el servidor
+```bash
+# Modo desarrollo (con hot-reload)
+npm run dev
+
+# Modo producción
+npm run build
+npm start
+```
+
+## 🧪 Testing
+
+La suite de pruebas utiliza **Vitest**. Para ejecutar los tests:
+
+```bash
+# Correr todos los tests
+npm run test
+
+# Correr tests con reporte de cobertura
+npm run test:coverage
+```
+
+## 📖 Documentación de la API
+
+Una vez que el servidor esté corriendo, puedes acceder a la documentación interactiva de Swagger en:
+`http://localhost:3000/api-docs`
 
 ## 🏗️ Arquitectura del Proyecto (SOLID & Clean Architecture)
 
@@ -59,7 +118,7 @@ La base de datos está diseñada para manejar múltiples divisas y transacciones
 La plataforma implementa un margen de ganancia automático mediante comisiones:
 *   **Comisión Fija:** 3% sobre el monto de la operación.
 *   **Operaciones Sujetas a Cargo:** Retiros (`withdraw`) e Intercambios de divisa (`swap`).
-*   **Flujo de Tesorería:** Las comisiones se acreditan automáticamente en tiempo real a la billetera del **Usuario Administrador**, permitiendo un seguimiento claro de los ingresos de la plataforma por cada moneda soportada.
+*   **Flujo de Tesorería:** Las comisiones se acreditan automáticamente en tiempo real a la billetera del **Usuario Administrador** (`ADMIN_ID: 11111111...`), permitiendo una trazabilidad completa de los ingresos de la plataforma por cada moneda soportada.
 
 ### Diseño y Relaciones
 
@@ -178,7 +237,7 @@ erDiagram
     *   **Transacciones**: Confirmación de depósitos, alertas de retiros (con desglose de comisión del 3%), comprobantes de envío y avisos de recepción de dinero.
     *   **Conversiones**: Resumen detallado de intercambios de divisa (Swaps) con cálculo de tasa y comisión aplicada.
 *   **Transparencia Financiera**: En todas las operaciones sujetas a cargos (Retiros y Swaps), el sistema garantiza la precisión mediante redondeo a 2 decimales y comunica el costo del servicio tanto en la respuesta de la API como en las notificaciones automáticas al usuario.
-*   **Seguridad**: Hasheo de contraseñas con **Bcrypt.js**, protección de rutas mediante **JWT** y sistema de limitación de tasa (Rate Limit) para el chatbot.
+*   **Seguridad**: Hasheo de contraseñas con **Bcrypt.js** y protección de rutas mediante **JWT**.
 
 ## 🚀 Instalación y Configuración
 
@@ -248,40 +307,43 @@ erDiagram
 
 La documentación interactiva completa está disponible en: 👉 **`http://localhost:3000/api-docs`**
 
-| Método | Ruta | Acceso | Descripción |
-| :--- | :--- | :--- | :--- |
-| `GET` | `/` | Público | Verificación del estado del servidor. |
-| `POST` | `/api/auth/register` | Público | Registro de usuario y billetera. |
-| `POST` | `/api/auth/login` | Público | Login y obtención de JWT. |
-| `GET` | `/api/auth/me` | Privado | Verificación rápida de sesión. |
-| `PATCH` | `/api/auth/profile` | Privado | Actualizar perfil (Nombre, Alias, Pass). |
-| `POST` | `/api/support/info` | Público | Chat de ayuda para visitantes. |
-| `POST` | `/api/support/chat` | Privado | Chat de ayuda con datos del usuario. |
-| `GET` | `/api/exchange/rates` | Público | Ver tasas (ARS, COP, VES). |
-| `POST` | `/api/exchange/swap` | Privado | Cambiar de moneda (ej: ARS a COP). |
-| `POST` | `/api/exchange/sync` | Admin | Forzar actualización de tasas. |
-| `GET` | `/api/wallets/me` | Privado | Ver CBU, Alias y saldos. |
-| `GET` | `/api/wallets/lookup/:id` | Privado | Buscar destinatario por CBU o Alias. |
-| `GET` | `/api/wallets/contacts` | Privado | Ver contactos frecuentes (ya transferidos). |
-| `POST` | `/api/transactions/deposit` | Privado | Cargar fondos a la billetera. |
-| `POST` | `/api/transactions/withdraw` | Privado | Retirar fondos de la billetera. |
-| `POST` | `/api/transactions/transfer` | Privado | Enviar dinero a otro usuario. |
-| `GET` | `/api/transactions/history` | Privado | Historial de transacciones paginado. |
+| Método | Ruta | Acceso | Datos Requeridos | Descripción |
+| :--- | :--- | :--- | :--- | :--- |
+| `GET` | `/` | Público | - | Verificación del estado del servidor. |
+| `GET` | `/health` | Público | - | Health Check para monitoreo. |
+| `POST` | `/api/auth/register` | Público | `email, name, password` | Registro de usuario y billetera. |
+| `POST` | `/api/auth/login` | Público | `email, password` | Login y obtención de JWT. |
+| `GET` | `/api/auth/me` | Privado | - | Verificación rápida de sesión. |
+| `PATCH` | `/api/auth/profile` | Privado | `name?, alias?, password?` | Actualizar perfil unificado. |
+| `POST` | `/api/support/info` | Público | `message, history?` | Chat de ayuda para visitantes. |
+| `POST` | `/api/support/chat` | Privado | `message, history?` | Chat de ayuda con datos del usuario. |
+| `GET` | `/api/exchange/rates` | Público | - | Ver tasas (ARS, COP, VES). |
+| `GET` | `/api/exchange/history` | Público | `from, to` (query) | Historial para gráficos de cotización. |
+| `POST` | `/api/exchange/swap` | Privado | `from, to, amount` | Cambiar de moneda (ej: ARS a COP). |
+| `POST` | `/api/exchange/sync` | Admin | - | Forzar actualización de tasas. |
+| `GET` | `/api/wallets/me` | Privado | - | Ver CBU, Alias y saldos. |
+| `GET` | `/api/wallets/lookup/:identifier` | Privado | `:identifier` (CBU/Alias) | Buscar destinatario. |
+| `GET` | `/api/wallets/contacts` | Privado | - | Ver contactos frecuentes. |
+| `POST` | `/api/transactions/deposit` | Privado | `amount, currency_code` | Cargar fondos. |
+| `POST` | `/api/transactions/withdraw` | Privado | `amount, currency_code` | Retirar fondos. |
+| `POST` | `/api/transactions/transfer` | Privado | `to_id, amount, currency` | Enviar dinero a otro usuario. |
+| `GET` | `/api/transactions/history` | Privado | `page?, limit?` (query) | Historial paginado. |
 
 ### 💡 Tips para el Frontend
 1.  **Seguridad:** Todas las rutas marcadas como `Privado` requieren el header `Authorization: Bearer [TOKEN]`.
-2.  **Validación de Destinatario:** Antes de transferir, usa el endpoint de `lookup` para mostrar el nombre del dueño del CBU/Alias y dar seguridad al usuario.
-3.  **Historial Dinámico:** El historial devuelve la dirección `direction: 'sent' | 'received'`, lo que permite pintar fácilmente los montos en Rojo o Verde.
+2.  **Manejo de Decimales:** El backend redondea todos los montos y comisiones a **2 decimales**. Se recomienda que el frontend aplique la misma lógica para evitar discrepancias visuales.
+3.  **Validación de Destinatario:** Antes de transferir, usa el endpoint de `lookup` para mostrar el nombre del dueño del CBU/Alias.
+4.  **Historial Dinámico:** El historial devuelve la dirección `direction: 'sent' | 'received'`, facilitando el uso de colores (Rojo/Verde).
 
 ---
 
 ## 🤖 Funcionamiento del Chatbot (IA)
 
-El asistente virtual utiliza Google Gemini y opera en dos modalidades para asistir al usuario:
+El asistente virtual utiliza Google Gemini y opera en dos modalidades de **Alta Disponibilidad** (sin límites de frecuencia) para asistir al usuario:
 
 *   **Chat Público (`/api/support/info`)**:
     *   **Uso**: Ideal para la Landing Page o antes del Login.
-    *   **Contexto**: Solo tiene información general sobre LatamPay (qué monedas acepta, cómo registrarse, etc.).
+    *   **Contexto**: Solo tiene información general sobre LatamPay.
     *   **Historial**: El Frontend puede enviar un array `history` para que la IA recuerde los mensajes anteriores de la sesión actual.
 *   **Chat Privado (`/api/support/chat`)**:
     *   **Uso**: Dentro del Dashboard del usuario.
@@ -331,7 +393,7 @@ El diseño de todos los correos electrónicos está centralizado para facilitar 
 *   [x] **Automatización**: Cron Job horario para la actualización de tasas de cambio.
 *   [x] **Arquitectura Profesional**: Modularización basada en SOLID y Clean Architecture.
 *   [x] **Calidad de Código**: Cobertura de tests modularizada (**51 tests exitosos**).
-*   [x] **Seguridad**: Rate Limiting para bots, hasheo de passwords y sistema Type-Safe completo.
+*   [x] **Seguridad**: Hasheo de passwords, protección de rutas y sistema Type-Safe completo.
 
 
 ## 🔒 Seguridad e Integridad
@@ -351,21 +413,24 @@ npm run test:run
 ---
 
 ## 📂 Estructura del Proyecto
+
+Esta estructura está diseñada siguiendo patrones de **Clean Architecture** y desacoplamiento de capas para garantizar que el sistema sea fácil de escalar y testear:
+
 ```
 LatamPay-Backend/
 ├── sql/               # Scripts SQL (Schema & Seed)
 ├── src/
 │   ├── config/        # Configuración (Zod Validation)
-│   ├── controllers/   # Controladores de la API
-│   ├── db/            # Pool de conexiones
+│   ├── controllers/   # Controladores (Thin Controllers)
+│   ├── db/            # Infraestructura de DB
 │   ├── docs/          # Configuración Swagger
-│   ├── middlewares/   # Seguridad y Errores
-│   ├── routes/        # Definición de Endpoints
-│   ├── schemas/       # Validaciones de Entrada
-│   ├── services/      # Lógica de Negocio y Transacciones
+│   ├── middlewares/   # Seguridad, Auth y Errores
+│   ├── routes/        # Definición de Contratos (Endpoints)
+│   ├── schemas/       # Validaciones Zod (Single Source of Truth)
+│   ├── services/      # Lógica de Negocio (Dominio)
 │   ├── tests/         # Suite de Pruebas Automáticas
-│   ├── types/         # Definiciones de Tipos de TypeScript
-│   ├── utils/         # Helpers y Cron Jobs
+│   ├── types/         # Definiciones Estrictas de TS
+│   ├── utils/         # Helpers, Cron Jobs y Templates
 │   └── server.ts      # Punto de entrada
 └── package.json       # Dependencias y Scripts
 ```

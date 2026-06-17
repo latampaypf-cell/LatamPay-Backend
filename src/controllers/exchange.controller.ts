@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
-import { getStoredExchangeRates, syncExchangeRates, swapCurrency } from '../services/exchange.service';
-import { SwapInput } from '../schemas/wallet.schema';
+import { getStoredExchangeRates, syncExchangeRates, swapCurrency, getExchangeHistory } from '../services/exchange.service';
+import { SwapInput, ExchangeHistoryInput } from '../schemas/wallet.schema';
 
 export const getRates = async (_req: Request, res: Response, next: NextFunction) => {
   try {
@@ -8,6 +8,19 @@ export const getRates = async (_req: Request, res: Response, next: NextFunction)
     res.json({
       status: 'success',
       data: rates
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getHistory = async (req: Request<{}, {}, {}, ExchangeHistoryInput>, res: Response, next: NextFunction) => {
+  try {
+    const { from, to } = req.query;
+    const history = await getExchangeHistory(from, to);
+    res.json({
+      status: 'success',
+      data: history
     });
   } catch (error) {
     next(error);

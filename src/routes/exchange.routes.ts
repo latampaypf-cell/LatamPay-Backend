@@ -1,9 +1,9 @@
 import { Router } from 'express';
-import { getRates, triggerSync, swap } from '../controllers/exchange.controller';
+import { getRates, triggerSync, swap, getHistory } from '../controllers/exchange.controller';
 import { requireAuth } from '../middlewares/auth.middleware';
 import { requireAdmin } from '../middlewares/admin.middleware';
 import { validate } from '../middlewares/validate.middleware';
-import { swapSchema } from '../schemas/wallet.schema';
+import { swapSchema, exchangeHistorySchema } from '../schemas/wallet.schema';
 
 const router = Router();
 
@@ -27,6 +27,44 @@ const router = Router();
  *                   items: { $ref: '#/components/schemas/ExchangeRate' }
  */
 router.get('/rates', getRates);
+
+/**
+ * @swagger
+ * /api/exchange/history:
+ *   get:
+ *     summary: Obtener el historial mensual de cotización para un par de monedas
+ *     tags: [Exchange]
+ *     parameters:
+ *       - in: query
+ *         name: from
+ *         required: true
+ *         schema:
+ *           type: string
+ *         example: ARS
+ *       - in: query
+ *         name: to
+ *         required: true
+ *         schema:
+ *           type: string
+ *         example: COP
+ *     responses:
+ *       200:
+ *         description: Historial de cotizaciones
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status: { type: string, example: success }
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       rate: { type: number, example: 4.25 }
+ *                       created_at: { type: string, format: date-time }
+ */
+router.get('/history', validate(exchangeHistorySchema, 'query'), getHistory);
 
 /**
  * @swagger
