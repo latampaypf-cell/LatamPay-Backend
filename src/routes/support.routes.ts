@@ -4,22 +4,8 @@ import { handleUserChat } from '../controllers/user-support.controller';
 import { requireAuth } from '../middlewares/auth.middleware';
 import { validate } from '../middlewares/validate.middleware';
 import { publicChatSchema } from '../schemas/support.schema';
-import rateLimit from 'express-rate-limit';
 
 const router = Router();
-
-// Seguridad: Limitar a 5 consultas cada 10 minutos por IP para evitar abusos del API de IA
-const botLimiter = rateLimit({
-  windowMs: 10 * 60 * 1000,
-  max: 5,
-  skip: () => process.env.NODE_ENV === 'test', // No limitar durante los tests
-  message: {
-    status: 'error',
-    message: 'Has alcanzado el límite de consultas permitidas. Intenta de nuevo en unos minutos.'
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
 
 /**
  * @swagger
@@ -53,7 +39,7 @@ const botLimiter = rateLimit({
  *           application/json:
  *             schema: { $ref: '#/components/schemas/SupportResponse' }
  */
-router.post('/info', botLimiter, validate(publicChatSchema), handlePublicChat);
+router.post('/info', validate(publicChatSchema), handlePublicChat);
 
 /**
  * @swagger
@@ -89,6 +75,6 @@ router.post('/info', botLimiter, validate(publicChatSchema), handlePublicChat);
  *           application/json:
  *             schema: { $ref: '#/components/schemas/SupportResponse' }
  */
-router.post('/chat', requireAuth, botLimiter, validate(publicChatSchema), handleUserChat);
+router.post('/chat', requireAuth, validate(publicChatSchema), handleUserChat);
 
 export default router;
